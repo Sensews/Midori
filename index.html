@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Midori - Iniciar Sessão</title>
+    <link rel="icon" type="image/svg+xml" href="Assets/icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header SVG -->
+    <div class="header-bg">
+        <img src="Assets/Header.svg" alt="" aria-hidden="true">
+    </div>
+
+    <!-- Logo -->
+    <div class="logo">
+        <img src="Assets/logo.svg" alt="Midori">
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Left Side - Mascot -->
+        <div class="mascot-section">
+            <img src="Assets/Mido.svg" alt="Mido - Mascote Midori" class="mascot-img" id="mascot-login">
+            <img src="Assets/Mido Computer.svg" alt="Mido no Computador" class="mascot-img mascot-hidden" id="mascot-register">
+            <img src="Assets/Mido Celular.svg" alt="Mido no Celular" class="mascot-img mascot-hidden mascot-forgot" id="mascot-forgot">
+        </div>
+
+        <!-- Right Side - Cards Container -->
+        <div class="login-section">
+            <!-- Login Card -->
+            <div class="login-card" id="login-card">
+                <div class="login-header">
+                    <div class="welcome-text">
+                        <p class="welcome-label">Bem Vindo(a) ao <span class="midori-brand">MIDORI</span></p>
+                        <h1 class="login-title">Iniciar Sessão</h1>
+                    </div>
+                    <div class="signup-link">
+                        <span>Sem conta?</span>
+                        <a href="#" id="signup-link">Cadastre-se</a>
+                    </div>
+                </div>
+
+                <form id="login-form" novalidate>
+                    <div class="form-group">
+                        <label for="email">Entre o seu Email</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="Email@email.com" 
+                            autocomplete="email"
+                            required
+                        >
+                        <span class="error-message" id="email-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Entre a sua Senha</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            placeholder="Senha" 
+                            autocomplete="current-password"
+                            required
+                        >
+                        <span class="error-message" id="password-error"></span>
+                    </div>
+
+                    <div class="form-group form-link-group">
+                        <a href="#" id="forgot-link" class="form-link">Esqueci a Senha</a>
+                    </div>
+
+                    <button type="submit" class="btn-login" id="btn-login">
+                        Entrar
+                    </button>
+                </form>
+            </div>
+
+            <!-- Forgot Password Card -->
+            <div class="login-card hidden" id="forgot-card">
+                <div class="login-header">
+                    <div class="welcome-text">
+                        <p class="welcome-label">Esqueceu sua senha?</p>
+                        <h1 class="login-title">Recuperar Senha</h1>
+                    </div>
+                    <div class="signup-link">
+                        <span>Lembrou?</span>
+                        <a href="#" id="back-login-link">Voltar ao Login</a>
+                    </div>
+                </div>
+
+                <p class="forgot-description">Digite seu email e enviaremos um link para redefinir sua senha.</p>
+
+                <form id="forgot-form" novalidate>
+                    <div class="form-group">
+                        <label for="forgot-email">Entre o seu Email</label>
+                        <input 
+                            type="email" 
+                            id="forgot-email" 
+                            name="email" 
+                            placeholder="Email@email.com" 
+                            autocomplete="email"
+                            required
+                        >
+                        <span class="error-message" id="forgot-email-error"></span>
+                    </div>
+
+                    <button type="submit" class="btn-login" id="btn-forgot">
+                        Enviar Link
+                    </button>
+                </form>
+            </div>
+
+            <!-- Register Card -->
+            <div class="login-card register-card hidden" id="register-card">
+                <div class="login-header">
+                    <div class="welcome-text">
+                        <p class="welcome-label">Bem Vindo(a) ao <span class="midori-brand">MIDORI</span></p>
+                        <h1 class="login-title">Cadastro</h1>
+                    </div>
+                    <div class="signup-link">
+                        <span>Tem uma conta?</span>
+                        <a href="#" id="login-link">Iniciar Sessão</a>
+                    </div>
+                </div>
+
+                <form id="register-form" novalidate>
+                    <div class="form-group">
+                        <label for="reg-email">Entre o seu Email</label>
+                        <input 
+                            type="email" 
+                            id="reg-email" 
+                            name="email" 
+                            placeholder="Email@email.com" 
+                            autocomplete="email"
+                            required
+                        >
+                        <span class="error-message" id="reg-email-error"></span>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reg-username">Nome de Usuário</label>
+                            <input 
+                                type="text" 
+                                id="reg-username" 
+                                name="username" 
+                                placeholder="Nome de Usuário" 
+                                autocomplete="username"
+                                required
+                            >
+                            <span class="error-message" id="reg-username-error"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-phone">Número de Celular</label>
+                            <input 
+                                type="tel" 
+                                id="reg-phone" 
+                                name="phone" 
+                                placeholder="(XX) 99999-9999" 
+                                autocomplete="tel"
+                                required
+                            >
+                            <span class="error-message" id="reg-phone-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reg-cpf">Entre seu CPF</label>
+                        <input 
+                            type="text" 
+                            id="reg-cpf" 
+                            name="cpf" 
+                            placeholder="123.456.780-12" 
+                            required
+                        >
+                        <span class="error-message" id="reg-cpf-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reg-password">Entre a sua Senha</label>
+                        <input 
+                            type="password" 
+                            id="reg-password" 
+                            name="password" 
+                            placeholder="Senha" 
+                            autocomplete="new-password"
+                            required
+                        >
+                        <span class="error-message" id="reg-password-error"></span>
+                    </div>
+
+                    <button type="submit" class="btn-login" id="btn-register">
+                        Cadastrar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer SVG -->
+    <div class="footer-bg">
+        <img src="Assets/Footer.svg" alt="" aria-hidden="true">
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
