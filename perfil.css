@@ -1,0 +1,954 @@
+/* Perfil - CSS específico (mantém header/footer/background via styles.css) */
+
+.profile-main {
+    padding: 6vw 4vw 5vw;
+    align-items: center;
+    justify-content: center;
+}
+
+.top-nav {
+    position: fixed;
+    top: 1.2vw;
+    right: 1.8vw;
+    z-index: 120;
+    display: flex;
+    gap: 0.8vw;
+}
+
+.top-nav__btn {
+    width: 3.2vw;
+    height: 3.2vw;
+    display: grid;
+    place-items: center;
+    border-radius: 0.9vw;
+    background: transparent;
+    transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.top-nav__btn:hover {
+    opacity: 0.85;
+}
+
+.top-nav__btn:active {
+    transform: scale(0.98);
+}
+
+.top-nav__btn img {
+    width: 3vw;
+    height: 3vw;
+}
+
+.profile-shell {
+    width: 92vw;
+    max-width: 92vw;
+    height: 82vh;
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(0.7vw);
+    -webkit-backdrop-filter: blur(0.7vw);
+    border-radius: 1.4vw;
+    box-shadow: 0 0.28vw 2.1vw rgba(0, 0, 0, 0.06);
+    position: relative;
+    padding: 2.2vw 2.2vw;
+    overflow: hidden;
+}
+
+/* Modal (Configurações) */
+.modal-overlay[hidden] {
+    display: none;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: transparent;
+    display: grid;
+    place-items: center;
+    padding: 4vw;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.modal-overlay.is-open {
+    opacity: 1;
+    pointer-events: auto;
+    background: transparent;
+}
+
+.modal {
+    width: min(50vw, 680px);
+    max-height: 86vh;
+    overflow: auto;
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(0.7vw);
+    -webkit-backdrop-filter: blur(0.7vw);
+    border-radius: 1.4vw;
+    box-shadow: 0 0.28vw 2.1vw rgba(0, 0, 0, 0.10);
+    border: 0.12vw solid rgba(67, 95, 23, 0.25);
+    padding: 1.2vw 1.35vw;
+}
+
+.modal-motion {
+    transform: translateY(1.4vw) scale(0.70) rotate(-6deg);
+    opacity: 0;
+    will-change: transform, opacity;
+}
+
+.modal-overlay.is-open .modal-motion {
+    opacity: 1;
+    animation: modal-pop-in 0.75s cubic-bezier(0.16, 1, 0.30, 1) both;
+}
+
+@keyframes modal-pop-in {
+    0% {
+        opacity: 0;
+        transform: translateY(1.4vw) scale(0.70) rotate(-6deg);
+    }
+
+    70% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1.07) rotate(0deg);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+}
+
+.modal__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1vw;
+    margin-bottom: 0.8vw;
+}
+
+.modal__title {
+    font-size: 1.05vw;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.modal__close {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1.8vw;
+    line-height: 1;
+    color: var(--green-dark);
+    width: 2.6vw;
+    height: 2.6vw;
+    border-radius: 0.8vw;
+    transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.modal__close:hover {
+    opacity: 0.85;
+}
+
+.modal__close:active {
+    transform: scale(0.98);
+}
+
+.modal__body {
+    display: grid;
+    gap: 0.65vw;
+}
+
+.modal__row {
+    display: grid;
+    grid-template-columns: 10.5vw 1fr;
+    gap: 0.85vw;
+    align-items: start;
+}
+
+.modal__photo {
+    display: grid;
+    gap: 0.55vw;
+}
+
+.modal__photoPreview {
+    width: 10.5vw;
+    height: 10.5vw;
+    border-radius: 1.2vw;
+    background: rgba(0, 0, 0, 0.08);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border: 0.12vw solid rgba(67, 95, 23, 0.25);
+}
+
+.modal__photoPreview img {
+    width: 96%;
+    height: 96%;
+    object-fit: contain;
+    border-radius: 1vw;
+}
+
+.modal__photoActions {
+    display: grid;
+    gap: 0.4vw;
+}
+
+.modal__dangerInline {
+    margin-top: 0.2vw;
+    padding-top: 0.35vw;
+    border-top: 0.12vw solid rgba(67, 95, 23, 0.18);
+    display: grid;
+    gap: 0.25vw;
+}
+
+.modal__dangerHint {
+    font-size: 0.7vw;
+    color: var(--text-muted);
+    text-align: left;
+}
+
+.modal__fileInput {
+    display: none;
+}
+
+.modal__fileBtn {
+    height: 2.8vw;
+    display: grid;
+    place-items: center;
+    border-radius: 0.83vw;
+    background-color: var(--green-dark);
+    color: var(--white);
+    font-size: 0.85vw;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.15s ease, box-shadow 0.3s ease;
+}
+
+.modal__fileBtn:hover {
+    background-color: var(--green-light);
+    color: var(--green-dark);
+    box-shadow: 0 0.28vw 1.1vw rgba(181, 255, 63, 0.45);
+}
+
+.modal__fileBtn:active {
+    transform: scale(0.985);
+}
+
+.modal__fields {
+    display: grid;
+    gap: 0.2vw;
+}
+
+.modal .form-group {
+    display: grid;
+    gap: 0.25vw;
+    margin: 0;
+}
+
+.modal .form-group label {
+    margin: 0;
+}
+
+.modal textarea {
+    width: 100%;
+    min-height: 5.4vw;
+    border: 0.1vw solid var(--input-border);
+    border-radius: 0.83vw;
+    padding: 0.8vw 1.05vw;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85vw;
+    color: var(--text-dark);
+    background: var(--white);
+    outline: none;
+    resize: none;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Inputs menores dentro do modal (não afeta o restante do site) */
+.modal .form-group label {
+    font-size: 0.8vw;
+}
+
+.modal .form-group input {
+    height: 3vw;
+    font-size: 0.85vw;
+}
+
+.modal textarea:focus {
+    border-color: var(--green-light);
+    box-shadow: 0 0 0 0.2vw rgba(181, 255, 63, 0.25);
+}
+
+.modal__counter {
+    margin-top: 0.1vw;
+    font-size: 0.7vw;
+    color: var(--text-muted);
+    text-align: right;
+    line-height: 1;
+}
+
+.modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.8vw;
+    margin-top: 0.2vw;
+}
+
+/* “Entrando na floresta”: manter Header/Footer nítidos (sem mover), só dar leve zoom + saturação */
+.header-bg img {
+    filter: brightness(1) saturate(1);
+}
+
+.footer-bg img {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+}
+
+.header-bg img,
+.footer-bg img {
+    transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1), filter 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform, filter;
+}
+
+body.modal-scene .header-bg img {
+    transform: scaleX(1.4) scale(1.06);
+    filter: brightness(0.88) saturate(1.26);
+}
+
+body.modal-scene .footer-bg img {
+    transform: scale(1.06);
+    filter: brightness(0.88) saturate(1.26);
+}
+
+/* Header/Footer por cima do card (e fora do blur do fundo) */
+body.modal-scene .header-bg,
+body.modal-scene .footer-bg {
+    z-index: 80;
+}
+
+/* Animação de saída do modal (volta pro botão) */
+.modal-overlay.is-closing .modal-motion {
+    opacity: 1;
+    animation: modal-pop-out 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes modal-pop-out {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+
+    18% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1.03) rotate(-1deg);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(1.2vw) scale(0.70) rotate(6deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modal-overlay,
+    .modal-motion,
+    .header-bg img,
+    .footer-bg img {
+        transition: none;
+    }
+
+    .modal-overlay.is-open .modal {
+        animation: none;
+    }
+
+    .modal-overlay.is-open .modal-motion {
+        animation: none;
+    }
+
+    .modal-overlay.is-closing .modal-motion {
+        animation: none;
+    }
+}
+
+/* Fundo desfocado/escuro durante o modal (exceto Header/Footer) */
+.main-content::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(0.55vw);
+    -webkit-backdrop-filter: blur(0.55vw);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.modal-open .main-content::after {
+    opacity: 1;
+}
+
+body.modal-open .top-nav {
+    opacity: 0.55;
+    filter: blur(0.35vw);
+}
+
+.modal__ghostBtn {
+    height: 2.8vw;
+    padding: 0 1.2vw;
+    border-radius: 0.83vw;
+    border: 0.12vw solid rgba(67, 95, 23, 0.35);
+    background: rgba(255, 255, 255, 0.55);
+    color: var(--green-dark);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85vw;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.modal__ghostBtn:hover {
+    opacity: 0.85;
+}
+
+.modal__ghostBtn:active {
+    transform: scale(0.985);
+}
+
+.modal__saveBtn {
+    height: 2.8vw;
+    padding: 0 1.4vw;
+    border-radius: 0.83vw;
+    border: none;
+    background-color: var(--green-dark);
+    color: var(--white);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85vw;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.15s ease, box-shadow 0.3s ease;
+}
+
+.modal__saveBtn:hover {
+    background-color: var(--green-light);
+    color: var(--green-dark);
+    box-shadow: 0 0.28vw 1.1vw rgba(181, 255, 63, 0.45);
+}
+
+.modal__saveBtn:active {
+    transform: scale(0.985);
+}
+
+.modal__danger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1vw;
+    padding: 0.85vw 0.9vw;
+    border-radius: 1vw;
+    border: 0.12vw solid rgba(211, 47, 47, 0.25);
+    background: rgba(255, 255, 255, 0.55);
+}
+
+.modal__dangerText strong {
+    display: block;
+    color: var(--text-dark);
+    font-size: 0.9vw;
+    margin-bottom: 0.2vw;
+}
+
+.modal__dangerText p {
+    color: var(--text-muted);
+    font-size: 0.75vw;
+}
+
+.modal__dangerBtn {
+    height: 2.6vw;
+    padding: 0 0.9vw;
+    border-radius: 0.83vw;
+    border: 0.12vw solid rgba(211, 47, 47, 0.55);
+    background: rgba(211, 47, 47, 0.10);
+    color: var(--error);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85vw;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.modal__dangerBtn:hover {
+    opacity: 0.9;
+}
+
+.modal__dangerBtn:active {
+    transform: scale(0.985);
+}
+
+.icon-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.icon-btn:hover {
+    opacity: 0.85;
+}
+
+.icon-btn:active {
+    transform: scale(0.98);
+}
+
+.settings-btn {
+    position: absolute;
+    top: 1.4vw;
+    left: 1.4vw;
+    width: 2.8vw;
+    height: 2.8vw;
+}
+
+.settings-btn img {
+    width: 2.4vw;
+    height: 2.4vw;
+}
+
+.add-btn {
+    width: 2.6vw;
+    height: 2.6vw;
+}
+
+.add-btn img {
+    width: 2.6vw;
+    height: 2.6vw;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: 35% 65%;
+    height: 100%;
+    gap: 2.2vw;
+    padding-top: 2.2vw;
+}
+
+.profile-left {
+    padding-right: 0.8vw;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.profile-right {
+    border-left: 0.12vw solid rgba(67, 95, 23, 0.55);
+    padding-left: 2.2vw;
+    padding-right: 2vw;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.profile-header {
+    display: grid;
+    grid-template-columns: 9.8vw 1fr;
+    gap: 1.2vw;
+    align-items: center;
+    padding-left: 1vw;
+}
+
+.avatar {
+    width: 9.8vw;
+    height: 9.8vw;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.08);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar--default img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+}
+
+.profile-name {
+    font-size: 1.2vw;
+    font-weight: 700;
+    color: var(--text-dark);
+    line-height: 1.2;
+    margin-bottom: 0.35vw;
+}
+
+.profile-user {
+    min-width: 0;
+}
+
+.profile-bio {
+    font-size: 0.75vw;
+    color: var(--text-muted);
+    line-height: 1.35;
+    margin-bottom: 0.9vw;
+    max-width: 26vw;
+    height: calc(1.35em * 3);
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.profile-meta {
+    list-style: none;
+    display: grid;
+    gap: 0.55vw;
+}
+
+.profile-meta__item {
+    display: flex;
+    align-items: center;
+    gap: 0.55vw;
+    font-size: 0.8vw;
+    color: var(--green-dark);
+    font-weight: 500;
+}
+
+.profile-meta__item img {
+    width: 1.15vw;
+    height: 1.15vw;
+}
+
+.section {
+    margin-top: 1.2vw;
+}
+
+@media (min-width: 769px) {
+    .section--expo {
+        margin-top: 0.35vw;
+    }
+}
+
+.section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1vw;
+}
+
+.section-head--centered {
+    display: grid;
+    grid-template-columns: 2.6vw 1fr 2.6vw;
+    align-items: center;
+    justify-items: center;
+    gap: 0;
+}
+
+.section-head--centered::before {
+    content: '';
+    grid-column: 1;
+    width: 2.6vw;
+    height: 2.6vw;
+}
+
+.section-head--centered .section-title-img {
+    grid-column: 2;
+    justify-self: center;
+}
+
+.section-head--centered .add-btn {
+    grid-column: 3;
+    justify-self: end;
+}
+
+.section-title-img {
+    height: 2.4vw;
+    width: auto;
+}
+
+.section-title-img--expo {
+    height: 3.35vw;
+}
+
+.section-sub {
+    margin-top: 0.3vw;
+    font-size: 0.72vw;
+    color: var(--green-dark);
+    font-weight: 500;
+    text-align: center;
+}
+
+.section--donation,
+.section--expo {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.section--donation {
+    flex: 1;
+}
+
+.section--expo {
+    flex: 1;
+}
+
+/* Doando */
+.donation-grid {
+    margin-top: 1.2vw;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.35vw;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 0.4vw;
+}
+
+.plant-card {
+    border-radius: 1vw;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.65);
+    border: 0.12vw solid rgba(67, 95, 23, 0.45);
+}
+
+.plant-card__img {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.plant-card--donation .plant-card__img {
+    height: 9.2vw;
+}
+
+.plant-card__bottom {
+    background: rgba(255, 255, 255, 0.7);
+    padding: 0.8vw;
+}
+
+.plant-card__field {
+    height: 2.2vw;
+    border-radius: 0.5vw;
+    border: 0.12vw solid rgba(67, 95, 23, 0.45);
+    background: rgba(255, 255, 255, 0.7);
+}
+
+/* Expo */
+.expo-grid {
+    margin-top: 1.2vw;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.65vw;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 0.4vw;
+}
+
+.plant-card--expo {
+    border: 0;
+    background: transparent;
+}
+
+.plant-card--expo .plant-card__img {
+    height: 10.5vw;
+    border-radius: 1vw 1vw 0 0;
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.plant-card--expo .plant-card__bar {
+    height: 3.2vw;
+    background: var(--green-dark);
+    border-radius: 0 0 1vw 1vw;
+}
+
+/* Responsivo */
+@media (max-width: 1024px) {
+    .profile-shell {
+        height: 84vh;
+    }
+
+    .profile-name {
+        font-size: 1.6vw;
+    }
+
+    .profile-bio {
+        font-size: 1vw;
+        max-width: 34vw;
+    }
+
+    .profile-meta__item {
+        font-size: 1vw;
+    }
+
+    .section-sub {
+        font-size: 0.95vw;
+    }
+
+    .plant-card--donation .plant-card__img {
+        height: 12vw;
+    }
+
+    .plant-card--expo .plant-card__img {
+        height: 13vw;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        overflow: auto;
+    }
+
+    .profile-main {
+        height: auto;
+        padding: 18vw 4vw 20vw;
+    }
+
+    .profile-shell {
+        height: auto;
+        overflow: visible;
+    }
+
+    .profile-grid {
+        grid-template-columns: 1fr;
+        gap: 3vw;
+    }
+
+    .profile-right {
+        border-left: none;
+        padding-left: 0;
+        border-top: 0.12vw solid rgba(67, 95, 23, 0.55);
+        padding-top: 3vw;
+    }
+
+    .profile-header {
+        padding-left: 0;
+        grid-template-columns: 13vw 1fr;
+    }
+
+    .avatar {
+        width: 13vw;
+        height: 13vw;
+    }
+
+    .section-title-img {
+        height: 5vw;
+    }
+
+    .section-title-img--expo {
+        height: 6.6vw;
+    }
+
+    .section-head--centered {
+        grid-template-columns: 6vw 1fr 6vw;
+    }
+
+    .section-head--centered::before {
+        width: 6vw;
+        height: 6vw;
+    }
+
+    .add-btn,
+    .settings-btn {
+        width: 6vw;
+        height: 6vw;
+    }
+
+    .add-btn img,
+    .settings-btn img {
+        width: 6vw;
+        height: 6vw;
+    }
+
+    .top-nav__btn img {
+        width: 6vw;
+        height: 6vw;
+    }
+
+    .donation-grid,
+    .expo-grid {
+        gap: 3vw;
+        overflow-y: visible;
+        padding-right: 0;
+    }
+
+    .plant-card--donation .plant-card__img {
+        height: 28vw;
+    }
+
+    .plant-card--expo .plant-card__img {
+        height: 30vw;
+    }
+
+    .plant-card--expo .plant-card__bar {
+        height: 8vw;
+    }
+
+    .modal {
+        width: 92vw;
+        padding: 4vw 4vw;
+        border-radius: 4vw;
+    }
+
+    .modal__title {
+        font-size: 4.2vw;
+    }
+
+    .modal__close {
+        font-size: 7vw;
+        width: 8vw;
+        height: 8vw;
+    }
+
+    .modal__row {
+        grid-template-columns: 1fr;
+    }
+
+    .modal__photoPreview {
+        width: 42vw;
+        height: 42vw;
+        border-radius: 4vw;
+        margin: 0 auto;
+    }
+
+    .modal__fileBtn,
+    .modal__ghostBtn,
+    .modal__saveBtn,
+    .modal__dangerBtn {
+        height: 12vw;
+        font-size: 3.6vw;
+        border-radius: 3vw;
+    }
+
+    .modal__counter {
+        font-size: 3.2vw;
+    }
+
+    .modal textarea {
+        min-height: 24vw;
+        font-size: 3.6vw;
+        border-radius: 3vw;
+        padding: 3vw 3vw;
+    }
+
+    .modal__danger {
+        border-radius: 3.2vw;
+        padding: 3vw 3vw;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .modal__dangerText strong {
+        font-size: 3.6vw;
+    }
+
+    .modal__dangerText p {
+        font-size: 3.2vw;
+    }
+
+    .modal__actions {
+        flex-direction: column;
+    }
+}

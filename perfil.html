@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Midori - Perfil</title>
+    <link rel="icon" type="image/svg+xml" href="Assets/icon.svg">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="perfil.css">
+</head>
+<body>
+    <div class="header-bg">
+        <img src="Assets/Header.svg" alt="" aria-hidden="true">
+    </div>
+
+    <div class="logo">
+        <img src="Assets/logo.svg" alt="Midori">
+    </div>
+
+    <nav class="top-nav" aria-label="Atalhos">
+        <a class="top-nav__btn" href="#" aria-label="Mensagens">
+            <img src="Assets/mail.svg" alt="" aria-hidden="true">
+        </a>
+        <a class="top-nav__btn" href="#" aria-label="Início">
+            <img src="Assets/home.svg" alt="" aria-hidden="true">
+        </a>
+    </nav>
+
+    <main class="main-content profile-main">
+        <section class="profile-shell" aria-label="Tela de perfil">
+            <button class="icon-btn settings-btn" id="btn-settings" type="button" aria-label="Configurações">
+                <img src="Assets/COnfiguar icon.svg" alt="" aria-hidden="true">
+            </button>
+
+            <div class="profile-grid">
+                <div class="profile-left">
+                    <header class="profile-header">
+                        <div class="avatar avatar--default" id="profile-avatar" aria-hidden="true">
+                            <img id="profile-avatar-img" src="Assets/Mido.svg" alt="">
+                        </div>
+
+                        <div class="profile-user">
+                            <h1 class="profile-name" id="profile-name">João Pedro Moreira</h1>
+                            <p class="profile-bio" id="profile-bio">Sou um Homem que ama Plantas e Cachorros, eu adoro usar esse site!</p>
+
+                            <ul class="profile-meta" aria-label="Informações do usuário">
+                                <li class="profile-meta__item">
+                                    <img src="Assets/Localização icon.svg" alt="" aria-hidden="true">
+                                    <span id="profile-location">Curitiba, PR</span>
+                                </li>
+                                <li class="profile-meta__item">
+                                    <img src="Assets/Favorito Icon.svg" alt="" aria-hidden="true">
+                                    <span id="profile-favorite">Magnolia</span>
+                                </li>
+                                <li class="profile-meta__item">
+                                    <img src="Assets/Ingressou Icon.svg" alt="" aria-hidden="true">
+                                    <span>Ingressou em março/2026</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </header>
+
+                    <section class="section section--donation">
+                        <div class="section-head section-head--centered">
+                            <img class="section-title-img" src="Assets/Doar Icon.svg" alt="Doando">
+                            <button class="icon-btn add-btn" type="button" data-action="add-donation" aria-label="Adicionar planta para doação">
+                                <img src="Assets/Adicionar icon.svg" alt="" aria-hidden="true">
+                            </button>
+                        </div>
+                        <p class="section-sub">Suas plantas que estão em processo de doação!</p>
+
+                        <div class="donation-grid" role="list" aria-label="Plantas para doação">
+                            <article class="plant-card plant-card--donation" role="listitem" aria-label="Planta para doação 1">
+                                <div class="plant-card__img" aria-hidden="true"></div>
+                                <div class="plant-card__bottom" aria-hidden="true">
+                                    <div class="plant-card__field"></div>
+                                </div>
+                            </article>
+                            <article class="plant-card plant-card--donation" role="listitem" aria-label="Planta para doação 2">
+                                <div class="plant-card__img" aria-hidden="true"></div>
+                                <div class="plant-card__bottom" aria-hidden="true">
+                                    <div class="plant-card__field"></div>
+                                </div>
+                            </article>
+                            <article class="plant-card plant-card--donation" role="listitem" aria-label="Planta para doação 3">
+                                <div class="plant-card__img" aria-hidden="true"></div>
+                                <div class="plant-card__bottom" aria-hidden="true">
+                                    <div class="plant-card__field"></div>
+                                </div>
+                            </article>
+                            <article class="plant-card plant-card--donation" role="listitem" aria-label="Planta para doação 4">
+                                <div class="plant-card__img" aria-hidden="true"></div>
+                                <div class="plant-card__bottom" aria-hidden="true">
+                                    <div class="plant-card__field"></div>
+                                </div>
+                            </article>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="profile-right">
+                    <section class="section section--expo">
+                        <div class="section-head section-head--centered">
+                            <img class="section-title-img section-title-img--expo" src="Assets/Exposição kcl .svg" alt="Expo">
+                            <button class="icon-btn add-btn" type="button" data-action="add-expo" aria-label="Adicionar planta na exposição">
+                                <img src="Assets/Adicionar icon.svg" alt="" aria-hidden="true">
+                            </button>
+                        </div>
+                        <p class="section-sub">Suas plantas que estão em exposição para todos admirarem!</p>
+
+                        <div class="expo-grid" role="list" aria-label="Plantas em exposição">
+                            <article class="plant-card plant-card--expo" role="listitem" aria-label="Planta em exposição 1">
+                                <div class="plant-card__img" aria-hidden="true"></div>
+                                <div class="plant-card__bar" aria-hidden="true"></div>
+                            </article>
+                            <article class="plant-card plant-card--expo" role="listitem" aria-label="Planta em exposição 2">
+                                <div class="plant-card__img" aria-hidden="true"></div>
+                                <div class="plant-card__bar" aria-hidden="true"></div>
+                            </article>
+                            <article class="plant-card plant-card--expo" role="listitem" aria-label="Planta em exposição 3">
+                                <div class="plant-card__img" aria-hidden="true"></div>
+                                <div class="plant-card__bar" aria-hidden="true"></div>
+                            </article>
+                            <article class="plant-card plant-card--expo" role="listitem" aria-label="Planta em exposição 4">
+                                <div class="plant-card__img" aria-hidden="true"></div>
+                                <div class="plant-card__bar" aria-hidden="true"></div>
+                            </article>
+                            <article class="plant-card plant-card--expo" role="listitem" aria-label="Planta em exposição 5">
+                                <div class="plant-card__img" aria-hidden="true"></div>
+                                <div class="plant-card__bar" aria-hidden="true"></div>
+                            </article>
+                            <article class="plant-card plant-card--expo" role="listitem" aria-label="Planta em exposição 6">
+                                <div class="plant-card__img" aria-hidden="true"></div>
+                                <div class="plant-card__bar" aria-hidden="true"></div>
+                            </article>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Configurações -->
+    <div class="modal-overlay" id="settings-overlay" hidden>
+        <div class="modal-motion">
+            <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+                <div class="modal__head">
+                    <h2 class="modal__title" id="settings-title">Configurações do Perfil</h2>
+                    <button class="modal__close" id="settings-close" type="button" aria-label="Fechar">×</button>
+                </div>
+
+                <form class="modal__body" id="settings-form" novalidate>
+                    <div class="modal__row">
+                        <div class="modal__photo">
+                            <div class="modal__photoPreview" aria-hidden="true">
+                                <img id="settings-photo-preview" src="Assets/Mido.svg" alt="">
+                            </div>
+
+                            <div class="modal__photoActions">
+                                <label class="modal__fileBtn" for="settings-photo">Trocar foto</label>
+                                <input id="settings-photo" class="modal__fileInput" type="file" accept="image/*">
+                                <button class="modal__ghostBtn" id="settings-remove-photo" type="button">Remover foto</button>
+
+                                <div class="modal__dangerInline" aria-label="Ações perigosas">
+                                    <button class="modal__dangerBtn" id="settings-delete" type="button">Deletar conta</button>
+                                    <p class="modal__dangerHint">Essa ação é permanente.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal__fields">
+                            <div class="form-group">
+                                <label for="settings-name">Nome de usuário</label>
+                                <input id="settings-name" name="name" type="text" maxlength="30" placeholder="Seu nome" autocomplete="nickname" required>
+                                <div class="modal__counter" id="settings-name-count" aria-live="polite"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="settings-location">Localização</label>
+                                <input id="settings-location" name="location" type="text" maxlength="60" placeholder="Cidade, Estado, País" autocomplete="off">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="settings-favorite">Planta favorita</label>
+                                <input id="settings-favorite" name="favorite" type="text" maxlength="20" placeholder="Ex: Magnolia" autocomplete="off">
+                                <div class="modal__counter" id="settings-favorite-count" aria-live="polite"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="settings-bio">Bio</label>
+                                <textarea id="settings-bio" name="bio" maxlength="140" placeholder="Fale um pouco sobre você..."></textarea>
+                                <div class="modal__counter" id="settings-bio-count" aria-live="polite"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal__actions">
+                        <button class="modal__ghostBtn" id="settings-cancel" type="button">Cancelar</button>
+                        <button class="modal__saveBtn" type="submit">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bg">
+        <img src="Assets/Footer.svg" alt="" aria-hidden="true">
+    </div>
+
+    <script src="perfil.js"></script>
+</body>
+</html>
