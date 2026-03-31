@@ -146,6 +146,67 @@
         </section>
     </main>
 
+    <!-- Modal Criar Postagem -->
+    <div class="modal-overlay" id="post-overlay" hidden>
+        <div class="modal-motion">
+            <div class="modal modal--post" role="dialog" aria-modal="true" aria-labelledby="post-title">
+                <div class="modal__head">
+                    <img src="Assets/Criar Postagem.svg" alt="Criar Postagem" class="modal__titleImg" id="post-title">
+                    <button class="modal__close" id="post-close" type="button" aria-label="Fechar">×</button>
+                </div>
+
+                <form class="modal__body" id="post-form" novalidate>
+                    <!-- Fotos -->
+                    <div class="post__photos">
+                        <div class="post__photosHead">
+                            <p class="post__photosTitle">Imagens da postagem</p>
+                            <span class="post__photosHint">adicione várias fotos</span>
+                        </div>
+                        <div class="post__photoGrid" id="post-photo-grid">
+                            <!-- Photos will be added here -->
+                        </div>
+                        <label class="post__photoAdd" for="post-photos">
+                            <span class="post__photoAddPlus">+</span>
+                            <span class="post__photoAddText">Adicionar fotos</span>
+                            <input id="post-photos" class="post__photoInput" type="file" accept="image/*" multiple hidden>
+                        </label>
+                    </div>
+
+                    <!-- Título -->
+                    <div class="form-group">
+                        <label for="post-title-input">Título</label>
+                        <input id="post-title-input" name="title" type="text" maxlength="80" placeholder="Dê um nome para sua postagem" required>
+                        <div class="modal__counter" id="post-title-count" aria-live="polite"></div>
+                    </div>
+
+                    <!-- Descrição -->
+                    <div class="form-group">
+                        <label for="post-description">Descrição</label>
+                        <textarea id="post-description" name="description" maxlength="500" placeholder="Fale mais sobre a planta, detalhes de cuidado, etc..." required></textarea>
+                        <div class="modal__counter" id="post-description-count" aria-live="polite"></div>
+                    </div>
+
+                    <!-- Tipo de Postagem -->
+                    <div class="post__type-selector">
+                        <label class="post__typeLabel">
+                            <input type="radio" name="post-type" value="donation" checked aria-label="Tipo: Adoção">
+                            <span>Doação</span>
+                        </label>
+                        <label class="post__typeLabel">
+                            <input type="radio" name="post-type" value="expo" aria-label="Tipo: Exposição">
+                            <span>Exposição</span>
+                        </label>
+                    </div>
+
+                    <!-- Ações -->
+                    <div class="modal__actions">
+                        <button class="modal__saveBtn" type="submit">Publicar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Configurações -->
     <div class="modal-overlay" id="settings-overlay" hidden>
         <div class="modal-motion">

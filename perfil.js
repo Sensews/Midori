@@ -254,15 +254,153 @@
     // Aplicar perfil salvo no carregamento
     applyProfileToUI(loadProfile());
 
+    // ========= Modal Criar Postagem =========
+    const postOverlay = document.getElementById('post-overlay');
+    const postForm = document.getElementById('post-form');
+    const postClose = document.getElementById('post-close');
+    const postCancel = document.getElementById('post-cancel');
+    const postTypeRadios = document.querySelectorAll('input[name="post-type"]');
+    const postPhotos = document.getElementById('post-photos');
+    const postPhotoGrid = document.getElementById('post-photo-grid');
+    const postTitleInput = document.getElementById('post-title-input');
+    const postDescriptionInput = document.getElementById('post-description');
+    const postTitleCount = document.getElementById('post-title-count');
+    const postDescriptionCount = document.getElementById('post-description-count');
+
+    let uploadedPhotos = [];
+
+    function updatePostCounter(el, input, max) {
+        if (!el || !input) return;
+        el.textContent = `${input.value.length}/${max}`;
+    }
+
+    function updatePostType() {
+        return postFormData.type;
+    }
+
+    function openPostModal() {
+        if (!postOverlay) return;
+        uploadedPhotos = [];
+        postPhotoGrid.innerHTML = '';
+        postForm.reset();
+        postOverlay.hidden = false;
+        postOverlay.classList.add('is-open');
+        document.body.classList.add('modal-scene');
+        updatePostType();
+    }
+
+    function closePostModal() {
+        if (!postOverlay) return;
+        postOverlay.classList.remove('is-open');
+        postOverlay.classList.add('is-closing');
+        document.body.classList.remove('modal-scene');
+        setTimeout(() => {
+            postOverlay.hidden = true;
+            postOverlay.classList.remove('is-closing');
+        }, MODAL_ANIM_MS);
+    }
+
+    const postFormData = {
+        type: 'donation',
+    };
+
+    postTypeRadios.forEach((radio) => {
+        radio.addEventListener('change', (e) => {
+            postFormData.type = e.target.value;
+            updatePostType();
+        });
+    });
+
+    postPhotos.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files || []);
+        files.forEach((file) => {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const src = evt.target.result;
+                uploadedPhotos.push(src);
+                renderPhotoGrid();
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+
+    function renderPhotoGrid() {
+        postPhotoGrid.innerHTML = uploadedPhotos
+            .map((src, i) => `
+                <div class="post__photoItem">
+                    <img src="${src}" alt="Foto ${i + 1}">
+                    <button type="button" class="post__photoRemove" aria-label="Remover foto" data-index="${i}">×</button>
+                </div>
+            `)
+            .join('');
+
+        postPhotoGrid.querySelectorAll('.post__photoRemove').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const idx = parseInt(btn.dataset.index, 10);
+                uploadedPhotos.splice(idx, 1);
+                renderPhotoGrid();
+            });
+        });
+    }
+
+    postTitleInput?.addEventListener('input', () => {
+        updatePostCounter(postTitleCount, postTitleInput, 80);
+    });
+
+    postDescriptionInput?.addEventListener('input', () => {
+        updatePostCounter(postDescriptionCount, postDescriptionInput, 500);
+    });
+
+    postForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const title = safeTrim(postTitleInput.value);
+        const description = safeTrim(postDescriptionInput.value);
+
+        if (!title) {
+            window.alert('Por favor, adicione um título para a postagem');
+            return;
+        }
+
+        if (!description) {
+            window.alert('Por favor, adicione uma descrição');
+            return;
+        }
+
+        if (uploadedPhotos.length === 0) {
+            window.alert('Por favor, adicione pelo menos uma foto');
+            return;
+        }
+
+        console.log('Postagem criada:', {
+            type: postFormData.type,
+            title,
+            description,
+            photoCount: uploadedPhotos.length,
+        });
+
+        window.alert('Postagem publicada com sucesso!');
+        closePostModal();
+    });
+
+    postClose?.addEventListener('click', closePostModal);
+    postCancel?.addEventListener('click', closePostModal);
+
+    // Abrir modal ao clicar em adicionar
     document.querySelectorAll('[data-action="add-donation"]').forEach((btn) => {
-        btn.addEventListener('click', function () {
-            showSoon('Adicionar doação');
+        btn.addEventListener('click', () => {
+            postFormData.type = 'donation';
+            document.querySelector('input[name="post-type"][value="donation"]').checked = true;
+            openPostModal();
         });
     });
 
     document.querySelectorAll('[data-action="add-expo"]').forEach((btn) => {
-        btn.addEventListener('click', function () {
-            showSoon('Adicionar exposição');
+        btn.addEventListener('click', () => {
+            postFormData.type = 'expo';
+            document.querySelector('input[name="post-type"][value="expo"]').checked = true;
+            openPostModal();
         });
     });
 
