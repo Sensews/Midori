@@ -1,68 +1,30 @@
 (function () {
     'use strict';
 
-    const STORAGE_KEY = 'midori.profile.v1';
+    const api = window.MidoriApi;
     const DEFAULT_AVATAR_SRC = 'Assets/Mido.svg';
-    const LIMITS = {
-        name: 30,
-        bio: 140,
-        favorite: 20,
-    };
+    const MAX_POST_IMAGES = 10;
+    const LIMITS = { name: 30, bio: 140, favorite: 20 };
+    const MODAL_ANIM_MS = 480;
 
-    function showSoon(featureName) {
-        window.alert(`${featureName}: em breve.`);
+    if (!api || !api.getToken()) {
+        window.location.href = 'index.html';
+        return;
     }
 
-    function safeTrim(value) {
-        return (value || '').toString().trim();
-    }
+    let me = null;
+    let profile = null;
+    let cachedPosts = [];
+    let editingPostId = null;
+    let activeViewPostId = null;
+    let activeViewImageIndex = 0;
+    let uploadedPhotos = [];
+    let closeAnimTimer = 0;
+    let draftAvatarFile = null;
+    let draftAvatarSrc = DEFAULT_AVATAR_SRC;
 
-    function clampLen(value, max) {
-        const str = safeTrim(value);
-        return str.length > max ? str.slice(0, max) : str;
-    }
-
-    function loadProfile() {
-        try {
-            const raw = window.localStorage.getItem(STORAGE_KEY);
-            if (!raw) return null;
-            return JSON.parse(raw);
-        } catch {
-            return null;
-        }
-    }
-
-    function saveProfile(profile) {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-    }
-
-    function applyProfileToUI(profile) {
-        if (!profile) return;
-
-        const nameEl = document.getElementById('profile-name');
-        const bioEl = document.getElementById('profile-bio');
-        const favoriteEl = document.getElementById('profile-favorite');
-        const locationEl = document.getElementById('profile-location');
-        const avatarEl = document.getElementById('profile-avatar-img');
-        const avatarWrap = document.getElementById('profile-avatar');
-
-        if (nameEl && profile.name) nameEl.textContent = profile.name;
-        if (bioEl && profile.bio !== undefined) bioEl.textContent = profile.bio;
-        if (favoriteEl && profile.favorite !== undefined) favoriteEl.textContent = profile.favorite;
-        if (locationEl && profile.location !== undefined) locationEl.textContent = profile.location;
-        const nextAvatarSrc = profile.avatarSrc || DEFAULT_AVATAR_SRC;
-        if (avatarEl) avatarEl.src = nextAvatarSrc;
-
-        if (avatarWrap) {
-            const isDefault = nextAvatarSrc === DEFAULT_AVATAR_SRC;
-            avatarWrap.classList.toggle('avatar--default', isDefault);
-        }
-    }
-
-    // ========= Modal Configurações =========
     const btnSettings = document.getElementById('btn-settings');
     const overlay = document.getElementById('settings-overlay');
-    const modalEl = overlay ? overlay.querySelector('.modal-motion') : null;
     const btnClose = document.getElementById('settings-close');
     const btnCancel = document.getElementById('settings-cancel');
     const form = document.getElementById('settings-form');
@@ -78,38 +40,346 @@
     const photoPreview = document.getElementById('settings-photo-preview');
     const btnDelete = document.getElementById('settings-delete');
 
-    const MODAL_ANIM_MS = 480;
-    let closeAnimTimer = 0;
+    const donationGrid = document.querySelector('.donation-grid');
+    const expoGrid = document.querySelector('.expo-grid');
 
-    let draftAvatarSrc = DEFAULT_AVATAR_SRC;
+    const postOverlay = document.getElementById('post-overlay');
+    const postForm = document.getElementById('post-form');
+    const postClose = document.getElementById('post-close');
+    const postTypeRadios = document.querySelectorAll('input[name="post-type"]');
+    const postPhotos = document.getElementById('post-photos');
+    const postPhotoGrid = document.getElementById('post-photo-grid');
+    const postTitleInput = document.getElementById('post-title-input');
+    const postDescriptionInput = document.getElementById('post-description');
+    const postSubmitBtn = document.getElementById('post-submit-btn');
+    const postTitleCount = document.getElementById('post-title-count');
+    const postDescriptionCount = document.getElementById('post-description-count');
+
+    const viewPostOverlay = document.getElementById('view-post-overlay');
+    const viewPostClose = document.getElementById('view-post-close');
+    const viewPostType = document.getElementById('view-post-type');
+    const viewPostTypeComments = document.getElementById('view-post-type-comments');
+    const viewPostTitleText = document.getElementById('view-post-title-text');
+    const viewPostEdited = document.getElementById('view-post-edited');
+    const viewPostDescription = document.getElementById('view-post-description');
+    const viewPostMainImage = document.getElementById('view-post-main-image');
+    const viewPostOpenZoom = document.getElementById('view-post-open-zoom');
+    const viewPostThumbs = document.getElementById('view-post-thumbs');
+    const viewPostLikeBtn = document.getElementById('view-post-like-btn');
+    const viewPostCompleteBtn = document.getElementById('view-post-complete-btn');
+    const viewPostEditBtn = document.getElementById('view-post-edit-btn');
+    const viewPostDeleteBtn = document.getElementById('view-post-delete-btn');
+    const viewPostLikeCount = document.getElementById('view-post-like-count');
+    const viewPostTabPost = document.getElementById('view-post-tab-post');
+    const viewPostTabComments = document.getElementById('view-post-tab-comments');
+    const viewPostPanelPost = document.getElementById('view-post-panel-post');
+    const viewPostPanelComments = document.getElementById('view-post-panel-comments');
+    const viewPostCommentsList = document.getElementById('view-post-comments-list');
+    const viewPostCommentForm = document.getElementById('view-post-comment-form');
+    const viewPostCommentInput = document.getElementById('view-post-comment-input');
+    const viewPostZoomOverlay = document.getElementById('view-post-zoom-overlay');
+    const viewPostZoomClose = document.getElementById('view-post-zoom-close');
+    const viewPostZoomImage = document.getElementById('view-post-zoom-image');
+
+    const postFormData = { type: 'donation' };
+
+    function safeTrim(value) {
+        return (value || '').toString().trim();
+    }
+
+    function clampLen(value, max) {
+        const text = safeTrim(value);
+        return text.length > max ? text.slice(0, max) : text;
+    }
+
+    function escapeHtml(value) {
+        return String(value || '').replace(/[<>&"']/g, (char) => ({
+            '<': '&lt;',
+            '>': '&gt;',
+            '&': '&amp;',
+            '"': '&quot;',
+            "'": '&#39;',
+        }[char]));
+    }
+
+    function toUiType(apiType) {
+        return apiType === 'EXHIBITION' ? 'expo' : 'donation';
+    }
+
+    function toApiType(uiType) {
+        return uiType === 'expo' ? 'EXHIBITION' : 'DONATION';
+    }
+
+    function mapPost(apiPost) {
+        const likesList = Array.isArray(apiPost.likes) ? apiPost.likes : [];
+        const commentsList = Array.isArray(apiPost.comments) ? apiPost.comments : [];
+
+        return {
+            id: apiPost.id,
+            type: toUiType(apiPost.type),
+            title: apiPost.title,
+            description: apiPost.description,
+            photos: apiPost.imageUrl ? [apiPost.imageUrl] : [],
+            likes: apiPost._count?.likes ?? likesList.length ?? 0,
+            likedByMe: likesList.some((item) => item.userId === me?.id),
+            donationCompleted: Boolean(apiPost.isDonationCompleted),
+            comments: commentsList.map((comment) => ({
+                id: comment.id,
+                authorName: comment.user?.displayName || comment.user?.username || 'Usuário',
+                text: comment.content,
+                createdAt: new Date(comment.createdAt).getTime(),
+            })),
+            createdAt: new Date(apiPost.createdAt).getTime(),
+            editedAt: apiPost.updatedAt !== apiPost.createdAt ? new Date(apiPost.updatedAt).getTime() : null,
+        };
+    }
+
+    function findPostById(postId) {
+        return cachedPosts.find((post) => post.id === postId) || null;
+    }
 
     function setCounter(el, value, max) {
         if (!el) return;
-        const len = (value || '').length;
-        el.textContent = `${len}/${max}`;
+        el.textContent = `${(value || '').length}/${max}`;
+    }
+
+    function updatePostCounter(el, input, max) {
+        if (!el || !input) return;
+        el.textContent = `${input.value.length}/${max}`;
+    }
+
+    function applyProfileToUI() {
+        if (!profile) return;
+
+        const nameEl = document.getElementById('profile-name');
+        const bioEl = document.getElementById('profile-bio');
+        const favoriteEl = document.getElementById('profile-favorite');
+        const locationEl = document.getElementById('profile-location');
+        const avatarEl = document.getElementById('profile-avatar-img');
+        const avatarWrap = document.getElementById('profile-avatar');
+
+        if (nameEl) nameEl.textContent = profile.displayName || profile.username || 'Usuário';
+        if (bioEl) bioEl.textContent = profile.bio || '';
+        if (favoriteEl) favoriteEl.textContent = profile.favorite || 'Magnolia';
+        if (locationEl) locationEl.textContent = profile.location || 'Curitiba, PR';
+
+        const nextAvatar = profile.avatarUrl || DEFAULT_AVATAR_SRC;
+        if (avatarEl) avatarEl.src = nextAvatar;
+        if (avatarWrap) avatarWrap.classList.toggle('avatar--default', nextAvatar === DEFAULT_AVATAR_SRC);
+    }
+
+    function applyPostImage(el, imageSrc) {
+        if (!el || !imageSrc) return;
+        el.style.backgroundImage = `url("${imageSrc}")`;
+        el.style.backgroundSize = 'cover';
+        el.style.backgroundPosition = 'center';
+        el.style.backgroundRepeat = 'no-repeat';
+    }
+
+    function buildCard(post, index) {
+        const isDonation = post.type === 'donation';
+        const article = document.createElement('article');
+        article.className = `plant-card ${isDonation ? 'plant-card--donation' : 'plant-card--expo'}`;
+        article.setAttribute('role', 'listitem');
+        article.setAttribute('aria-label', `${isDonation ? 'Postagem para doação' : 'Postagem em exposição'} ${index + 1}`);
+        article.dataset.postId = post.id;
+
+        const image = document.createElement('div');
+        image.className = 'plant-card__img';
+        image.setAttribute('aria-hidden', 'true');
+        applyPostImage(image, post.photos?.[0]);
+
+        if (isDonation && post.donationCompleted) {
+            const statusBadge = document.createElement('div');
+            statusBadge.className = 'plant-card__statusBadge';
+            statusBadge.textContent = '✓ Concluída';
+            image.appendChild(statusBadge);
+        }
+
+        const bottom = document.createElement('div');
+        bottom.className = 'plant-card__bottom';
+        bottom.setAttribute('aria-hidden', 'true');
+
+        const title = document.createElement('div');
+        title.className = 'plant-card__field plant-card__field--filled';
+        title.textContent = `${post.title || 'Sem título'}${post.editedAt ? ' • editado' : ''}`;
+
+        const meta = document.createElement('div');
+        meta.className = 'plant-card__meta';
+        meta.innerHTML = `<span class="plant-card__likesInline"><img src="Assets/like.svg" alt="" aria-hidden="true"> ${post.likes || 0}</span>`;
+
+        bottom.appendChild(title);
+        bottom.appendChild(meta);
+        article.appendChild(image);
+        article.appendChild(bottom);
+        return article;
+    }
+
+    function renderCachedPosts() {
+        const donationPosts = cachedPosts.filter((post) => post.type === 'donation');
+        const expoPosts = cachedPosts.filter((post) => post.type === 'expo');
+
+        if (donationGrid) {
+            donationGrid.innerHTML = '';
+            donationPosts.forEach((post, index) => donationGrid.appendChild(buildCard(post, index)));
+        }
+
+        if (expoGrid) {
+            expoGrid.innerHTML = '';
+            expoPosts.forEach((post, index) => expoGrid.appendChild(buildCard(post, index)));
+        }
+    }
+
+    function setViewPostTab(tab) {
+        const isComments = tab === 'comments';
+
+        if (viewPostTabPost) {
+            viewPostTabPost.classList.toggle('is-active', !isComments);
+            viewPostTabPost.setAttribute('aria-selected', String(!isComments));
+        }
+        if (viewPostTabComments) {
+            viewPostTabComments.classList.toggle('is-active', isComments);
+            viewPostTabComments.setAttribute('aria-selected', String(isComments));
+        }
+        if (viewPostPanelPost) {
+            viewPostPanelPost.classList.toggle('is-active', !isComments);
+            viewPostPanelPost.hidden = isComments;
+        }
+        if (viewPostPanelComments) {
+            viewPostPanelComments.classList.toggle('is-active', isComments);
+            viewPostPanelComments.hidden = !isComments;
+        }
+    }
+
+    function renderViewPostComments(comments) {
+        if (!viewPostCommentsList) return;
+        if (!comments.length) {
+            viewPostCommentsList.innerHTML = '<p class="view-post__empty">Nenhum comentário ainda.</p>';
+            return;
+        }
+
+        viewPostCommentsList.innerHTML = comments
+            .map((comment) => {
+                const text = escapeHtml(comment.text || '');
+                const author = escapeHtml(comment.authorName || 'Usuário');
+                return `<p class="view-post__commentItem"><span class="view-post__commentAuthor">${author}</span>${text}</p>`;
+            })
+            .join('');
+    }
+
+    function renderViewPostImages(post) {
+        const photos = Array.isArray(post.photos) ? post.photos : [];
+        if (!photos.length) {
+            viewPostMainImage.src = '';
+            viewPostThumbs.innerHTML = '';
+            return;
+        }
+
+        if (activeViewImageIndex >= photos.length) activeViewImageIndex = 0;
+        viewPostMainImage.src = photos[activeViewImageIndex];
+
+        viewPostThumbs.innerHTML = photos
+            .map((src, index) => `
+                <button type="button" class="view-post__thumb ${index === activeViewImageIndex ? 'is-active' : ''}" data-index="${index}" aria-label="Ver imagem ${index + 1}">
+                    <img src="${src}" alt="Miniatura ${index + 1}">
+                </button>
+            `)
+            .join('');
+
+        viewPostThumbs.querySelectorAll('.view-post__thumb').forEach((button) => {
+            button.addEventListener('click', () => {
+                activeViewImageIndex = Number(button.dataset.index) || 0;
+                renderViewPostImages(post);
+            });
+        });
+    }
+
+    function renderViewPost(post) {
+        const typeLabel = post.type === 'expo' ? 'Exposição' : 'Doação';
+        if (viewPostType) viewPostType.textContent = typeLabel;
+        if (viewPostTypeComments) viewPostTypeComments.textContent = typeLabel;
+        if (viewPostTitleText) viewPostTitleText.textContent = post.title || 'Sem título';
+        if (viewPostEdited) viewPostEdited.hidden = !post.editedAt;
+        if (viewPostDescription) viewPostDescription.textContent = post.description || '';
+        if (viewPostLikeCount) viewPostLikeCount.textContent = String(post.likes || 0);
+        if (viewPostLikeBtn) viewPostLikeBtn.classList.toggle('is-active', Boolean(post.likedByMe));
+
+        if (viewPostCompleteBtn) {
+            const isDonation = post.type === 'donation';
+            viewPostCompleteBtn.hidden = !isDonation;
+            viewPostCompleteBtn.classList.toggle('is-active', Boolean(post.donationCompleted));
+            viewPostCompleteBtn.textContent = post.donationCompleted ? 'Doação concluída ✓' : 'Marcar como concluída';
+        }
+
+        renderViewPostImages(post);
+        renderViewPostComments(post.comments || []);
+    }
+
+    function openZoomModal(imageSrc) {
+        if (!imageSrc) return;
+        viewPostZoomImage.src = imageSrc;
+        viewPostZoomOverlay.hidden = false;
+        viewPostZoomOverlay.classList.add('is-open');
+    }
+
+    function closeZoomModal() {
+        viewPostZoomOverlay.classList.remove('is-open');
+        viewPostZoomOverlay.classList.add('is-closing');
+        setTimeout(() => {
+            viewPostZoomOverlay.hidden = true;
+            viewPostZoomOverlay.classList.remove('is-closing');
+        }, MODAL_ANIM_MS);
+    }
+
+    async function openViewPostModal(postId) {
+        const localPost = findPostById(postId);
+        if (!localPost) return;
+
+        activeViewPostId = postId;
+        activeViewImageIndex = 0;
+        setViewPostTab('post');
+        renderViewPost(localPost);
+
+        viewPostOverlay.hidden = false;
+        viewPostOverlay.classList.add('is-open');
+        document.body.classList.add('modal-scene');
+
+        try {
+            const data = await api.getPost(postId);
+            const fullPost = mapPost(data.post);
+            cachedPosts = cachedPosts.map((item) => (item.id === fullPost.id ? fullPost : item));
+            renderCachedPosts();
+            if (activeViewPostId === fullPost.id) renderViewPost(fullPost);
+        } catch {
+        }
+    }
+
+    function closeViewPostModal() {
+        viewPostOverlay.classList.remove('is-open');
+        viewPostOverlay.classList.add('is-closing');
+        document.body.classList.remove('modal-scene');
+        setTimeout(() => {
+            viewPostOverlay.hidden = true;
+            viewPostOverlay.classList.remove('is-closing');
+            activeViewPostId = null;
+        }, MODAL_ANIM_MS);
     }
 
     function openModal() {
-        if (!overlay) return;
         if (closeAnimTimer) {
             window.clearTimeout(closeAnimTimer);
             closeAnimTimer = 0;
         }
+
         overlay.classList.remove('is-closing');
-        const current = loadProfile() || {
-            name: document.getElementById('profile-name')?.textContent || '',
-            bio: document.getElementById('profile-bio')?.textContent || '',
-            favorite: document.getElementById('profile-favorite')?.textContent || '',
-            avatarSrc: document.getElementById('profile-avatar-img')?.getAttribute('src') || DEFAULT_AVATAR_SRC,
-        };
+        draftAvatarFile = null;
+        draftAvatarSrc = profile?.avatarUrl || DEFAULT_AVATAR_SRC;
 
-        draftAvatarSrc = current.avatarSrc || DEFAULT_AVATAR_SRC;
         if (photoPreview) photoPreview.src = draftAvatarSrc;
-
-        if (inputName) inputName.value = clampLen(current.name, LIMITS.name);
-        if (inputBio) inputBio.value = clampLen(current.bio, LIMITS.bio);
-        if (inputFavorite) inputFavorite.value = clampLen(current.favorite, LIMITS.favorite);
-        if (inputLocation) inputLocation.value = clampLen(current.location || '', 60);
+        if (inputName) inputName.value = clampLen(profile?.displayName || '', LIMITS.name);
+        if (inputBio) inputBio.value = clampLen(profile?.bio || '', LIMITS.bio);
+        if (inputFavorite) inputFavorite.value = clampLen(profile?.favorite || '', LIMITS.favorite);
+        if (inputLocation) inputLocation.value = clampLen(profile?.location || '', 60);
 
         setCounter(countName, inputName?.value || '', LIMITS.name);
         setCounter(countBio, inputBio?.value || '', LIMITS.bio);
@@ -122,13 +392,10 @@
         overlay.classList.remove('is-open');
 
         requestAnimationFrame(() => overlay.classList.add('is-open'));
-
-        // foco inicial
         setTimeout(() => inputName?.focus(), 0);
     }
 
     function closeModal() {
-        if (!overlay) return;
         document.body.classList.remove('modal-scene');
         overlay.classList.add('is-closing');
         overlay.classList.remove('is-open');
@@ -141,195 +408,68 @@
             overlay.classList.remove('is-closing');
             closeAnimTimer = 0;
         }, MODAL_ANIM_MS);
+
         if (inputPhoto) inputPhoto.value = '';
     }
 
-    if (btnSettings) {
-        btnSettings.addEventListener('click', openModal);
-    }
-    if (btnClose) btnClose.addEventListener('click', closeModal);
-    if (btnCancel) btnCancel.addEventListener('click', closeModal);
+    function openPostModal(postToEdit = null) {
+        editingPostId = postToEdit?.id || null;
 
-    if (overlay) {
-        overlay.addEventListener('click', function (e) {
-            if (e.target === overlay) closeModal();
-        });
-    }
+        if (postToEdit) {
+            postFormData.type = postToEdit.type || 'donation';
+            uploadedPhotos = (postToEdit.photos || []).map((src) => ({ preview: src, file: null }));
+            postForm.reset();
+            postTitleInput.value = postToEdit.title || '';
+            postDescriptionInput.value = postToEdit.description || '';
+            const selectedType = document.querySelector(`input[name="post-type"][value="${postFormData.type}"]`);
+            if (selectedType) selectedType.checked = true;
+            if (postSubmitBtn) postSubmitBtn.textContent = 'Salvar edição';
+        } else {
+            uploadedPhotos = [];
+            postPhotoGrid.innerHTML = '';
+            postForm.reset();
+            postFormData.type = 'donation';
+            const defaultType = document.querySelector('input[name="post-type"][value="donation"]');
+            if (defaultType) defaultType.checked = true;
+            if (postSubmitBtn) postSubmitBtn.textContent = 'Publicar';
+        }
 
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && overlay && !overlay.hidden) closeModal();
-    });
+        renderPhotoGrid();
+        updatePostCounter(postTitleCount, postTitleInput, 80);
+        updatePostCounter(postDescriptionCount, postDescriptionInput, 500);
 
-    if (inputName) {
-        inputName.addEventListener('input', function () {
-            if (this.value.length > LIMITS.name) this.value = this.value.slice(0, LIMITS.name);
-            setCounter(countName, this.value, LIMITS.name);
-        });
-    }
-
-    if (inputFavorite) {
-        inputFavorite.addEventListener('input', function () {
-            if (this.value.length > LIMITS.favorite) this.value = this.value.slice(0, LIMITS.favorite);
-            setCounter(countFavorite, this.value, LIMITS.favorite);
-        });
-    }
-
-    // Localização agora é texto livre (sem API)
-
-    if (inputBio) {
-        inputBio.addEventListener('input', function () {
-            if (this.value.length > LIMITS.bio) this.value = this.value.slice(0, LIMITS.bio);
-            setCounter(countBio, this.value, LIMITS.bio);
-        });
-    }
-
-    if (inputPhoto) {
-        inputPhoto.addEventListener('change', function () {
-            const file = this.files && this.files[0];
-            if (!file) return;
-            if (!file.type.startsWith('image/')) {
-                window.alert('Selecione uma imagem válida.');
-                this.value = '';
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function () {
-                draftAvatarSrc = typeof reader.result === 'string' ? reader.result : DEFAULT_AVATAR_SRC;
-                if (photoPreview) photoPreview.src = draftAvatarSrc;
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    if (btnRemovePhoto) {
-        btnRemovePhoto.addEventListener('click', function () {
-            draftAvatarSrc = DEFAULT_AVATAR_SRC;
-            if (photoPreview) photoPreview.src = draftAvatarSrc;
-            if (inputPhoto) inputPhoto.value = '';
-        });
-    }
-
-    if (btnDelete) {
-        btnDelete.addEventListener('click', function () {
-            const ok = window.confirm('Tem certeza que deseja deletar sua conta?');
-            if (!ok) return;
-
-            window.localStorage.removeItem(STORAGE_KEY);
-            window.alert('Conta deletada (simulação).');
-            window.location.href = 'index.html';
-        });
-    }
-
-    if (form) {
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            const name = clampLen(inputName?.value || '', LIMITS.name);
-            const favorite = clampLen(inputFavorite?.value || '', LIMITS.favorite);
-            const bio = clampLen(inputBio?.value || '', LIMITS.bio);
-            const location = clampLen(inputLocation?.value || '', 60);
-
-            if (!name) {
-                window.alert('O nome de usuário é obrigatório.');
-                inputName?.focus();
-                return;
-            }
-
-            const profile = {
-                name,
-                favorite,
-                bio,
-                location,
-                avatarSrc: draftAvatarSrc || DEFAULT_AVATAR_SRC,
-                updatedAt: Date.now(),
-            };
-
-            saveProfile(profile);
-            applyProfileToUI(profile);
-            closeModal();
-        });
-    }
-
-    // Aplicar perfil salvo no carregamento
-    applyProfileToUI(loadProfile());
-
-    // ========= Modal Criar Postagem =========
-    const postOverlay = document.getElementById('post-overlay');
-    const postForm = document.getElementById('post-form');
-    const postClose = document.getElementById('post-close');
-    const postCancel = document.getElementById('post-cancel');
-    const postTypeRadios = document.querySelectorAll('input[name="post-type"]');
-    const postPhotos = document.getElementById('post-photos');
-    const postPhotoGrid = document.getElementById('post-photo-grid');
-    const postTitleInput = document.getElementById('post-title-input');
-    const postDescriptionInput = document.getElementById('post-description');
-    const postTitleCount = document.getElementById('post-title-count');
-    const postDescriptionCount = document.getElementById('post-description-count');
-
-    let uploadedPhotos = [];
-
-    function updatePostCounter(el, input, max) {
-        if (!el || !input) return;
-        el.textContent = `${input.value.length}/${max}`;
-    }
-
-    function updatePostType() {
-        return postFormData.type;
-    }
-
-    function openPostModal() {
-        if (!postOverlay) return;
-        uploadedPhotos = [];
-        postPhotoGrid.innerHTML = '';
-        postForm.reset();
         postOverlay.hidden = false;
         postOverlay.classList.add('is-open');
+        document.body.classList.add('modal-open');
         document.body.classList.add('modal-scene');
-        updatePostType();
     }
 
     function closePostModal() {
-        if (!postOverlay) return;
         postOverlay.classList.remove('is-open');
         postOverlay.classList.add('is-closing');
         document.body.classList.remove('modal-scene');
+
         setTimeout(() => {
             postOverlay.hidden = true;
             postOverlay.classList.remove('is-closing');
+
+            if ((overlay && !overlay.hidden) || (viewPostOverlay && !viewPostOverlay.hidden) || (viewPostZoomOverlay && !viewPostZoomOverlay.hidden)) {
+                document.body.classList.add('modal-open');
+            } else {
+                document.body.classList.remove('modal-open');
+            }
+
+            editingPostId = null;
+            if (postSubmitBtn) postSubmitBtn.textContent = 'Publicar';
         }, MODAL_ANIM_MS);
     }
 
-    const postFormData = {
-        type: 'donation',
-    };
-
-    postTypeRadios.forEach((radio) => {
-        radio.addEventListener('change', (e) => {
-            postFormData.type = e.target.value;
-            updatePostType();
-        });
-    });
-
-    postPhotos.addEventListener('change', (e) => {
-        const files = Array.from(e.target.files || []);
-        files.forEach((file) => {
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                const src = evt.target.result;
-                uploadedPhotos.push(src);
-                renderPhotoGrid();
-            };
-            reader.readAsDataURL(file);
-        });
-    });
-
     function renderPhotoGrid() {
         postPhotoGrid.innerHTML = uploadedPhotos
-            .map((src, i) => `
+            .map((photo, index) => `
                 <div class="post__photoItem">
-                    <img src="${src}" alt="Foto ${i + 1}">
-                    <button type="button" class="post__photoRemove" aria-label="Remover foto" data-index="${i}">×</button>
+                    <img src="${photo.preview}" alt="Foto ${index + 1}">
+                    <button type="button" class="post__photoRemove" aria-label="Remover foto" data-index="${index}">×</button>
                 </div>
             `)
             .join('');
@@ -337,20 +477,154 @@
         postPhotoGrid.querySelectorAll('.post__photoRemove').forEach((btn) => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                const idx = parseInt(btn.dataset.index, 10);
+                const idx = Number(btn.dataset.index);
+                if (Number.isNaN(idx)) return;
                 uploadedPhotos.splice(idx, 1);
                 renderPhotoGrid();
             });
         });
     }
 
-    postTitleInput?.addEventListener('input', () => {
-        updatePostCounter(postTitleCount, postTitleInput, 80);
+    async function refreshPosts() {
+        const response = await api.listPosts({ author: me.username });
+        const posts = Array.isArray(response.posts) ? response.posts : [];
+        cachedPosts = posts.map(mapPost);
+        renderCachedPosts();
+    }
+
+    async function initData() {
+        const meResponse = await api.getMe();
+        me = meResponse.user;
+
+        const profileResponse = await api.getMyProfile();
+        profile = {
+            ...profileResponse.profile,
+            favorite: 'Magnolia',
+            location: 'Curitiba, PR',
+        };
+
+        applyProfileToUI();
+        await refreshPosts();
+    }
+
+    btnSettings?.addEventListener('click', openModal);
+    btnClose?.addEventListener('click', closeModal);
+    btnCancel?.addEventListener('click', closeModal);
+
+    overlay?.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
     });
 
-    postDescriptionInput?.addEventListener('input', () => {
-        updatePostCounter(postDescriptionCount, postDescriptionInput, 500);
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (overlay && !overlay.hidden) closeModal();
+        if (viewPostOverlay && !viewPostOverlay.hidden) closeViewPostModal();
+        if (viewPostZoomOverlay && !viewPostZoomOverlay.hidden) closeZoomModal();
     });
+
+    inputName?.addEventListener('input', function () {
+        if (this.value.length > LIMITS.name) this.value = this.value.slice(0, LIMITS.name);
+        setCounter(countName, this.value, LIMITS.name);
+    });
+
+    inputFavorite?.addEventListener('input', function () {
+        if (this.value.length > LIMITS.favorite) this.value = this.value.slice(0, LIMITS.favorite);
+        setCounter(countFavorite, this.value, LIMITS.favorite);
+    });
+
+    inputBio?.addEventListener('input', function () {
+        if (this.value.length > LIMITS.bio) this.value = this.value.slice(0, LIMITS.bio);
+        setCounter(countBio, this.value, LIMITS.bio);
+    });
+
+    inputPhoto?.addEventListener('change', function () {
+        const file = this.files && this.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            window.alert('Selecione uma imagem válida.');
+            this.value = '';
+            return;
+        }
+
+        draftAvatarFile = file;
+
+        const reader = new FileReader();
+        reader.onload = function () {
+            draftAvatarSrc = typeof reader.result === 'string' ? reader.result : DEFAULT_AVATAR_SRC;
+            if (photoPreview) photoPreview.src = draftAvatarSrc;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    btnRemovePhoto?.addEventListener('click', function () {
+        draftAvatarFile = null;
+        draftAvatarSrc = DEFAULT_AVATAR_SRC;
+        if (photoPreview) photoPreview.src = draftAvatarSrc;
+        if (inputPhoto) inputPhoto.value = '';
+    });
+
+    btnDelete?.addEventListener('click', function () {
+        const ok = window.confirm('Deseja sair da sua conta agora?');
+        if (!ok) return;
+        api.clearSession();
+        window.location.href = 'index.html';
+    });
+
+    form?.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const name = clampLen(inputName?.value || '', LIMITS.name);
+        const bio = clampLen(inputBio?.value || '', LIMITS.bio);
+
+        if (!name) {
+            window.alert('O nome de usuário é obrigatório.');
+            inputName?.focus();
+            return;
+        }
+
+        try {
+            const updateResponse = await api.updateMyProfile({ displayName: name, bio });
+            profile = {
+                ...profile,
+                ...updateResponse.user,
+                location: clampLen(inputLocation?.value || profile.location || '', 60) || profile.location,
+                favorite: clampLen(inputFavorite?.value || profile.favorite || '', LIMITS.favorite) || profile.favorite,
+            };
+
+            if (draftAvatarFile) {
+                const avatarResponse = await api.uploadMyAvatar(draftAvatarFile);
+                profile.avatarUrl = avatarResponse.user.avatarUrl;
+            } else if (draftAvatarSrc === DEFAULT_AVATAR_SRC) {
+                profile.avatarUrl = DEFAULT_AVATAR_SRC;
+            }
+
+            applyProfileToUI();
+            closeModal();
+        } catch (error) {
+            window.alert(error.message || 'Erro ao salvar perfil.');
+        }
+    });
+
+    postTypeRadios.forEach((radio) => {
+        radio.addEventListener('change', (e) => {
+            postFormData.type = e.target.value;
+        });
+    });
+
+    postPhotos?.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files || []);
+        files.forEach((file) => {
+            if (uploadedPhotos.length >= MAX_POST_IMAGES) return;
+            if (!file.type.startsWith('image/')) return;
+            uploadedPhotos.push({ preview: URL.createObjectURL(file), file });
+        });
+
+        renderPhotoGrid();
+        postPhotos.value = '';
+    });
+
+    postTitleInput?.addEventListener('input', () => updatePostCounter(postTitleCount, postTitleInput, 80));
+    postDescriptionInput?.addEventListener('input', () => updatePostCounter(postDescriptionCount, postDescriptionInput, 500));
 
     postForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -359,39 +633,180 @@
         const description = safeTrim(postDescriptionInput.value);
 
         if (!title) {
-            window.alert('Por favor, adicione um título para a postagem');
+            window.alert('Por favor, adicione um título para a postagem.');
             return;
         }
 
         if (!description) {
-            window.alert('Por favor, adicione uma descrição');
+            window.alert('Por favor, adicione uma descrição.');
             return;
         }
 
-        if (uploadedPhotos.length === 0) {
-            window.alert('Por favor, adicione pelo menos uma foto');
-            return;
+        try {
+            if (editingPostId) {
+                const current = findPostById(editingPostId);
+                const file = uploadedPhotos.find((item) => item.file)?.file;
+
+                await api.updatePost(editingPostId, {
+                    title,
+                    description,
+                    isDonationCompleted: current?.donationCompleted,
+                    imageFile: file,
+                });
+            } else {
+                const firstImageFile = uploadedPhotos.find((item) => item.file)?.file;
+                if (!firstImageFile) {
+                    window.alert('Adicione pelo menos uma foto nova para publicar.');
+                    return;
+                }
+
+                await api.createPost({
+                    title,
+                    description,
+                    type: toApiType(postFormData.type),
+                    imageFile: firstImageFile,
+                });
+            }
+
+            await refreshPosts();
+            closePostModal();
+        } catch (error) {
+            window.alert(error.message || 'Erro ao salvar postagem.');
         }
-
-        console.log('Postagem criada:', {
-            type: postFormData.type,
-            title,
-            description,
-            photoCount: uploadedPhotos.length,
-        });
-
-        window.alert('Postagem publicada com sucesso!');
-        closePostModal();
     });
 
     postClose?.addEventListener('click', closePostModal);
-    postCancel?.addEventListener('click', closePostModal);
 
-    // Abrir modal ao clicar em adicionar
+    viewPostClose?.addEventListener('click', closeViewPostModal);
+    viewPostOverlay?.addEventListener('click', (e) => {
+        if (e.target === viewPostOverlay) closeViewPostModal();
+    });
+
+    viewPostLikeBtn?.addEventListener('click', async () => {
+        if (!activeViewPostId) return;
+        try {
+            const result = await api.toggleLike(activeViewPostId);
+            cachedPosts = cachedPosts.map((post) => {
+                if (post.id !== activeViewPostId) return post;
+                return { ...post, likedByMe: Boolean(result.liked), likes: result.totalLikes || 0 };
+            });
+
+            renderCachedPosts();
+            const updated = findPostById(activeViewPostId);
+            if (updated) renderViewPost(updated);
+        } catch (error) {
+            window.alert(error.message || 'Erro ao curtir postagem.');
+        }
+    });
+
+    viewPostCompleteBtn?.addEventListener('click', async () => {
+        if (!activeViewPostId) return;
+
+        const current = findPostById(activeViewPostId);
+        if (!current || current.type !== 'donation') return;
+
+        try {
+            await api.updatePost(activeViewPostId, {
+                isDonationCompleted: !current.donationCompleted,
+            });
+            await refreshPosts();
+            const updated = findPostById(activeViewPostId);
+            if (updated) renderViewPost(updated);
+        } catch (error) {
+            window.alert(error.message || 'Erro ao atualizar status da doação.');
+        }
+    });
+
+    viewPostEditBtn?.addEventListener('click', () => {
+        if (!activeViewPostId) return;
+        const post = findPostById(activeViewPostId);
+        if (!post) return;
+        closeViewPostModal();
+        setTimeout(() => openPostModal(post), MODAL_ANIM_MS);
+    });
+
+    viewPostDeleteBtn?.addEventListener('click', async () => {
+        if (!activeViewPostId) return;
+        const ok = window.confirm('Deseja realmente deletar esta postagem?');
+        if (!ok) return;
+
+        try {
+            await api.deletePost(activeViewPostId);
+            cachedPosts = cachedPosts.filter((post) => post.id !== activeViewPostId);
+            renderCachedPosts();
+            closeViewPostModal();
+        } catch (error) {
+            window.alert(error.message || 'Erro ao deletar postagem.');
+        }
+    });
+
+    viewPostCommentForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!activeViewPostId) return;
+
+        const text = safeTrim(viewPostCommentInput?.value || '');
+        if (!text) return;
+
+        try {
+            const response = await api.addComment(activeViewPostId, text.slice(0, 160));
+            const created = response.comment;
+
+            cachedPosts = cachedPosts.map((post) => {
+                if (post.id !== activeViewPostId) return post;
+                return {
+                    ...post,
+                    comments: [
+                        ...post.comments,
+                        {
+                            id: created.id,
+                            authorName: created.user?.displayName || created.user?.username || 'Você',
+                            text: created.content,
+                            createdAt: new Date(created.createdAt).getTime(),
+                        },
+                    ],
+                };
+            });
+
+            if (viewPostCommentInput) viewPostCommentInput.value = '';
+            const updated = findPostById(activeViewPostId);
+            if (updated) renderViewPost(updated);
+        } catch (error) {
+            window.alert(error.message || 'Erro ao comentar.');
+        }
+    });
+
+    viewPostTabPost?.addEventListener('click', () => setViewPostTab('post'));
+    viewPostTabComments?.addEventListener('click', () => setViewPostTab('comments'));
+
+    viewPostOpenZoom?.addEventListener('click', () => {
+        if (!activeViewPostId) return;
+        const post = findPostById(activeViewPostId);
+        const src = post?.photos?.[activeViewImageIndex];
+        if (src) openZoomModal(src);
+    });
+
+    viewPostZoomClose?.addEventListener('click', closeZoomModal);
+    viewPostZoomOverlay?.addEventListener('click', (e) => {
+        if (e.target === viewPostZoomOverlay) closeZoomModal();
+    });
+
+    donationGrid?.addEventListener('click', (e) => {
+        const card = e.target.closest('[data-post-id]');
+        if (!card) return;
+        openViewPostModal(card.dataset.postId);
+    });
+
+    expoGrid?.addEventListener('click', (e) => {
+        const card = e.target.closest('[data-post-id]');
+        if (!card) return;
+        openViewPostModal(card.dataset.postId);
+    });
+
     document.querySelectorAll('[data-action="add-donation"]').forEach((btn) => {
         btn.addEventListener('click', () => {
             postFormData.type = 'donation';
-            document.querySelector('input[name="post-type"][value="donation"]').checked = true;
+            const radio = document.querySelector('input[name="post-type"][value="donation"]');
+            if (radio) radio.checked = true;
             openPostModal();
         });
     });
@@ -399,15 +814,25 @@
     document.querySelectorAll('[data-action="add-expo"]').forEach((btn) => {
         btn.addEventListener('click', () => {
             postFormData.type = 'expo';
-            document.querySelector('input[name="post-type"][value="expo"]').checked = true;
+            const radio = document.querySelector('input[name="post-type"][value="expo"]');
+            if (radio) radio.checked = true;
             openPostModal();
         });
     });
 
     document.querySelectorAll('.top-nav__btn').forEach((btn) => {
         btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            showSoon('Atalho');
+            const href = this.getAttribute('href');
+            if (!href || href === '#') e.preventDefault();
         });
+    });
+
+    initData().catch((error) => {
+        if (error.status === 401) {
+            api.clearSession();
+            window.location.href = 'index.html';
+            return;
+        }
+        window.alert(error.message || 'Erro ao carregar perfil.');
     });
 })();

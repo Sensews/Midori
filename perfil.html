@@ -7,6 +7,24 @@
     <title>Midori - Perfil</title>
     <link rel="icon" type="image/svg+xml" href="Assets/icon.svg">
 
+    <style>
+        html { visibility: hidden; }
+    </style>
+    <script>
+        (function () {
+            try {
+                var token = window.localStorage.getItem('midori.auth.token');
+                if (!token) {
+                    window.location.replace('index.html');
+                    return;
+                }
+                document.documentElement.style.visibility = 'visible';
+            } catch (_err) {
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -24,10 +42,10 @@
     </div>
 
     <nav class="top-nav" aria-label="Atalhos">
-        <a class="top-nav__btn" href="#" aria-label="Mensagens">
+        <a class="top-nav__btn" href="mensagens.html" aria-label="Mensagens">
             <img src="Assets/mail.svg" alt="" aria-hidden="true">
         </a>
-        <a class="top-nav__btn" href="#" aria-label="Início">
+        <a class="top-nav__btn" href="perfil.html" aria-label="Início">
             <img src="Assets/home.svg" alt="" aria-hidden="true">
         </a>
     </nav>
@@ -46,17 +64,17 @@
                         </div>
 
                         <div class="profile-user">
-                            <h1 class="profile-name" id="profile-name">João Pedro Moreira</h1>
-                            <p class="profile-bio" id="profile-bio">Sou um Homem que ama Plantas e Cachorros, eu adoro usar esse site!</p>
+                            <h1 class="profile-name" id="profile-name">Carregando perfil...</h1>
+                            <p class="profile-bio" id="profile-bio"></p>
 
                             <ul class="profile-meta" aria-label="Informações do usuário">
                                 <li class="profile-meta__item">
                                     <img src="Assets/Localização icon.svg" alt="" aria-hidden="true">
-                                    <span id="profile-location">Curitiba, PR</span>
+                                    <span id="profile-location">-</span>
                                 </li>
                                 <li class="profile-meta__item">
                                     <img src="Assets/Favorito Icon.svg" alt="" aria-hidden="true">
-                                    <span id="profile-favorite">Magnolia</span>
+                                    <span id="profile-favorite">-</span>
                                 </li>
                                 <li class="profile-meta__item">
                                     <img src="Assets/Ingressou Icon.svg" alt="" aria-hidden="true">
@@ -200,9 +218,84 @@
 
                     <!-- Ações -->
                     <div class="modal__actions">
-                        <button class="modal__saveBtn" type="submit">Publicar</button>
+                        <button class="modal__saveBtn" id="post-submit-btn" type="submit">Publicar</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Visualizar Postagem -->
+    <div class="modal-overlay" id="view-post-overlay" hidden>
+        <div class="modal-motion">
+            <div class="modal modal--view-post" role="dialog" aria-modal="true" aria-labelledby="view-post-title">
+                <div class="modal__head">
+                    <h2 class="modal__title" id="view-post-title">Postagem</h2>
+                    <button class="modal__close" id="view-post-close" type="button" aria-label="Fechar">×</button>
+                </div>
+
+                <div class="modal__body view-post__body">
+                    <div class="view-post__tabs" role="tablist" aria-label="Abas da postagem">
+                        <button id="view-post-tab-post" class="view-post__tab is-active" type="button" role="tab" aria-selected="true">Postagem</button>
+                        <button id="view-post-tab-comments" class="view-post__tab" type="button" role="tab" aria-selected="false">Comentários</button>
+                    </div>
+
+                    <div id="view-post-panel-post" class="view-post__panel view-post__panel--post is-active" role="tabpanel">
+                        <div class="view-post__gallery">
+                            <button id="view-post-open-zoom" class="view-post__zoomTrigger" type="button" aria-label="Ampliar imagem">
+                                <img id="view-post-main-image" class="view-post__mainImage" src="" alt="Imagem da postagem">
+                            </button>
+                            <div id="view-post-thumbs" class="view-post__thumbs" aria-label="Outras imagens da postagem"></div>
+                        </div>
+
+                        <div class="view-post__content">
+                            <div class="view-post__metaRow">
+                                <span id="view-post-type" class="view-post__type">Doação</span>
+                                <div class="view-post__metaActions">
+                                    <button id="view-post-like-btn" class="view-post__likeBtn" type="button" aria-label="Curtir postagem">
+                                        <img src="Assets/like.svg" alt="" aria-hidden="true">
+                                        <span id="view-post-like-count">0</span>
+                                    </button>
+                                    <button id="view-post-complete-btn" class="view-post__actionBtn view-post__actionBtn--success" type="button" hidden>Doação concluída</button>
+                                    <button id="view-post-edit-btn" class="view-post__actionBtn" type="button">Editar</button>
+                                    <button id="view-post-delete-btn" class="view-post__actionBtn view-post__actionBtn--danger" type="button">Deletar</button>
+                                </div>
+                            </div>
+
+                            <h3 id="view-post-title-text" class="view-post__title"></h3>
+                            <p id="view-post-edited" class="view-post__edited" hidden>Este post foi editado.</p>
+                            <p id="view-post-description" class="view-post__description"></p>
+                        </div>
+                    </div>
+
+                    <div id="view-post-panel-comments" class="view-post__panel view-post__panel--comments" role="tabpanel" hidden>
+                        <div class="view-post__metaRow">
+                            <span id="view-post-type-comments" class="view-post__type">Doação</span>
+                        </div>
+                        <div class="view-post__commentsBox">
+                            <h4 class="view-post__commentsTitle">Comentários</h4>
+                            <div id="view-post-comments-list" class="view-post__commentsList"></div>
+                            <form id="view-post-comment-form" class="view-post__commentForm">
+                                <input id="view-post-comment-input" type="text" maxlength="160" placeholder="Escreva um comentário..." required>
+                                <button type="submit" class="modal__saveBtn">Enviar</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="view-post-zoom-overlay" hidden>
+        <div class="modal-motion">
+            <div class="modal modal--view-post-zoom" role="dialog" aria-modal="true" aria-label="Imagem ampliada">
+                <div class="modal__head">
+                    <h2 class="modal__title">Imagem</h2>
+                    <button class="modal__close" id="view-post-zoom-close" type="button" aria-label="Fechar">×</button>
+                </div>
+                <div class="modal__body">
+                    <img id="view-post-zoom-image" class="view-post__zoomImage" src="" alt="Imagem ampliada da postagem">
+                </div>
             </div>
         </div>
     </div>
@@ -274,6 +367,7 @@
         <img src="Assets/Footer.svg" alt="" aria-hidden="true">
     </div>
 
+    <script src="api-client.js"></script>
     <script src="perfil.js"></script>
 </body>
 </html>
