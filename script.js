@@ -8,6 +8,7 @@
         LOCKOUT_DURATION_MS: 30000,
         MIN_PASSWORD_LENGTH: 8,
         EMAIL_REGEX: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+        CPF_REGEX: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
     };
 
     let loginAttempts = 0;
@@ -39,6 +40,9 @@
     const regPhoneInput = document.getElementById('reg-phone');
     const regCpfInput = document.getElementById('reg-cpf');
     const regPasswordInput = document.getElementById('reg-password');
+    const passwordStrength = document.getElementById('password-strength');
+    const passwordStrengthFill = document.getElementById('password-strength-fill');
+    const passwordStrengthText = document.getElementById('password-strength-text');
 
     function sanitize(str) {
         const div = document.createElement('div');
@@ -79,9 +83,76 @@
     function validateCpf(cpf) {
         const trimmed = cpf.trim();
         if (!trimmed) return 'Por favor, insira seu CPF.';
+
+        if (!CONFIG.CPF_REGEX.test(trimmed)) {
+            return 'Formato inválido. Use 000.000.000-00.';
+        }
+
         const digits = trimmed.replace(/\D/g, '');
         if (digits.length !== 11) return 'CPF deve ter 11 dígitos.';
+
+        if (!isValidCpfDigits(digits)) {
+            return 'CPF inválido.';
+        }
+
         return '';
+    }
+
+    function isValidCpfDigits(cpfDigits) {
+        if (!cpfDigits || cpfDigits.length !== 11) return false;
+        if (/^(\d)\1{10}$/.test(cpfDigits)) return false;
+
+        function calcVerifier(base, factorStart) {
+            let total = 0;
+            for (let index = 0; index < base.length; index += 1) {
+                total += Number(base[index]) * (factorStart - index);
+            }
+            const mod = total % 11;
+            return mod < 2 ? 0 : 11 - mod;
+        }
+
+        const baseNine = cpfDigits.slice(0, 9);
+        const dig10 = calcVerifier(baseNine, 10);
+        const dig11 = calcVerifier(`${baseNine}${dig10}`, 11);
+
+        return cpfDigits.endsWith(`${dig10}${dig11}`);
+    }
+
+    function evaluatePasswordStrength(password) {
+        if (!password) {
+            return { score: 0, label: 'fraca', color: '#9E9E9E', width: '0%' };
+        }
+
+        let score = 0;
+        if (password.length >= 8) score += 1;
+        if (/[A-Z]/.test(password)) score += 1;
+        if (/[a-z]/.test(password)) score += 1;
+        if (/\d/.test(password)) score += 1;
+        if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+        if (score <= 2) {
+            return { score, label: 'fraca', color: '#D32F2F', width: '33%' };
+        }
+        if (score <= 4) {
+            return { score, label: 'média', color: '#F9A825', width: '66%' };
+        }
+        return { score, label: 'forte', color: '#2E7D32', width: '100%' };
+    }
+
+    function updatePasswordStrengthUI(password) {
+        if (!passwordStrength || !passwordStrengthFill || !passwordStrengthText) return;
+
+        if (!password) {
+            passwordStrength.hidden = true;
+            passwordStrengthFill.style.width = '0%';
+            return;
+        }
+
+        const result = evaluatePasswordStrength(password);
+        passwordStrength.hidden = false;
+        passwordStrengthFill.style.width = result.width;
+        passwordStrengthFill.style.backgroundColor = result.color;
+        passwordStrengthText.textContent = `Força da senha: ${result.label}`;
     }
 
     function showError(input, errorSpan, message) {
@@ -171,7 +242,7 @@
 
         try {
             await api.login(loginValue, password);
-            window.location.href = 'perfil.html';
+            window.location.href = 'home.html';
         } catch (error) {
             recordFailedAttempt();
             showError(emailInput, emailError, error.message || 'Email ou senha incorretos.');
@@ -278,10 +349,15 @@
 
     regPhoneInput.addEventListener('input', function () {
         let value = this.value.replace(/\D/g, '');
-        if (value.length > 11) value = value.slice(0, 11);
-        if (value.length > 6) value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+        if (value.length > 13) value = value.slice(0, 13);
+        if (value.length > 11) value = value.replace(/(\d{2})(\d{2})(\d{5})(\d{0,4})/, '+$1 ($2) $3-$4');
+        else if (value.length > 6) value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
         else if (value.length > 2) value = value.replace(/(\d{2})(\d{0,5})/, '($1) $2');
         this.value = value;
+    });
+
+    regPasswordInput.addEventListener('input', function () {
+        updatePasswordStrengthUI(this.value || '');
     });
 
     registerForm.addEventListener('submit', async function (e) {
@@ -318,10 +394,12 @@
                 email: regEmailInput.value.trim(),
                 username: regUsernameInput.value.trim().toLowerCase(),
                 displayName: regUsernameInput.value.trim(),
+                phone: regPhoneInput.value.trim(),
+                cpf: regCpfInput.value.trim(),
                 password: regPasswordInput.value,
             });
 
-            window.location.href = 'perfil.html';
+            window.location.href = 'home.html';
         } catch (error) {
             const errorSpan = document.getElementById('reg-email-error');
             showError(regEmailInput, errorSpan, error.message || 'Erro de conexão. Tente novamente.');

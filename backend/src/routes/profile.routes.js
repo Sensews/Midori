@@ -7,6 +7,16 @@ const { saveCompressedImage } = require('../utils/storage');
 
 const router = express.Router();
 
+function normalizeCpf(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  return digits || null;
+}
+
+function normalizePhone(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  return digits || null;
+}
+
 router.get('/me', authenticate, async (req, res) => {
   const profile = await prisma.user.findUnique({
     where: { id: req.user.userId },
@@ -16,6 +26,8 @@ router.get('/me', authenticate, async (req, res) => {
       username: true,
       displayName: true,
       role: true,
+      cpf: true,
+      phone: true,
       bio: true,
       avatarUrl: true,
       createdAt: true,
@@ -61,22 +73,60 @@ router.get('/:username', async (req, res) => {
 });
 
 router.put('/me', authenticate, async (req, res) => {
-  const { displayName, bio } = req.body;
+  const { displayName, bio, cpf, phone } = req.body;
 
   if (!displayName || String(displayName).trim().length < 2) {
     return res.status(400).json({ error: 'displayName deve ter ao menos 2 caracteres.' });
   }
 
+  const shouldUpdateCpf = Object.prototype.hasOwnProperty.call(req.body || {}, 'cpf');
+  const shouldUpdatePhone = Object.prototype.hasOwnProperty.call(req.body || {}, 'phone');
+
+  const data = {
+    displayName: String(displayName).trim(),
+    bio: bio ? String(bio).trim().slice(0, 280) : null,
+  };
+
+  if (shouldUpdateCpf) {
+    const normalizedCpf = normalizeCpf(cpf);
+    if (normalizedCpf && normalizedCpf.length !== 11) {
+      return res.status(400).json({ error: 'CPF inválido. Use 11 dígitos.' });
+    }
+
+    if (normalizedCpf) {
+      const existingCpf = await prisma.user.findFirst({
+        where: {
+          cpf: normalizedCpf,
+          id: { not: req.user.userId },
+        },
+        select: { id: true },
+      });
+
+      if (existingCpf) {
+        return res.status(409).json({ error: 'CPF já cadastrado para outro usuário.' });
+      }
+    }
+
+    data.cpf = normalizedCpf;
+  }
+
+  if (shouldUpdatePhone) {
+    const normalizedPhone = normalizePhone(phone);
+    if (normalizedPhone && (normalizedPhone.length < 10 || normalizedPhone.length > 13)) {
+      return res.status(400).json({ error: 'Telefone inválido. Use entre 10 e 13 dígitos.' });
+    }
+    data.phone = normalizedPhone;
+  }
+
   const user = await prisma.user.update({
     where: { id: req.user.userId },
-    data: {
-      displayName: String(displayName).trim(),
-      bio: bio ? String(bio).trim().slice(0, 280) : null,
-    },
+    data,
     select: {
       id: true,
       username: true,
       displayName: true,
+      cpf: true,
+      phone: true,
       bio: true,
       avatarUrl: true,
     },

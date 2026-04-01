@@ -1,0 +1,214 @@
+.public-profile-main {
+    padding: 5vw 4vw;
+    align-items: center;
+    justify-content: center;
+}
+
+.top-nav {
+    position: fixed;
+    top: 1.2vw;
+    right: 1.8vw;
+    z-index: 120;
+    display: flex;
+    gap: 0.8vw;
+}
+
+.top-nav__btn {
+    width: 3.2vw;
+    height: 3.2vw;
+    display: grid;
+    place-items: center;
+    border-radius: 0.9vw;
+    background: var(--green-dark);
+    border: 0.08vw solid rgba(255, 255, 255, 0.35);
+}
+
+.top-nav__btn img {
+    width: 2.1vw;
+    height: 2.1vw;
+    filter: brightness(0) invert(1);
+}
+
+.public-profile-shell {
+    width: min(94vw, 1180px);
+    min-height: 76vh;
+    max-height: 82vh;
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(0.7vw);
+    -webkit-backdrop-filter: blur(0.7vw);
+    border-radius: 1.4vw;
+    border: 0.12vw solid rgba(67, 95, 23, 0.2);
+    box-shadow: 0 0.28vw 2.1vw rgba(0, 0, 0, 0.08);
+    padding: 2vw;
+    overflow: auto;
+}
+
+.public-profile-head {
+    display: grid;
+    grid-template-columns: 8.5vw 1fr;
+    gap: 1.1vw;
+    align-items: center;
+    margin-bottom: 1vw;
+}
+
+.public-profile-avatarWrap {
+    width: 8.5vw;
+    height: 8.5vw;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(67, 95, 23, 0.1);
+}
+
+.public-profile-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.public-profile-name {
+    margin: 0;
+    font-size: 1.75vw;
+    color: var(--text-dark);
+}
+
+.public-profile-username,
+.public-profile-bio,
+.public-profile-stats {
+    margin: 0.2vw 0 0;
+    color: var(--text-muted);
+    font-size: 0.86vw;
+}
+
+.public-profile-reportBtn {
+    margin-top: 0.45vw;
+    width: fit-content;
+    height: 2.1vw;
+    border: none;
+    border-radius: 0.65vw;
+    background: rgba(185, 39, 39, 0.95);
+    color: var(--white);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.72vw;
+    font-weight: 600;
+    padding: 0 0.8vw;
+    cursor: pointer;
+}
+
+.public-profile-adminBtn {
+    margin-top: 0.45vw;
+    width: fit-content;
+    height: 2.1vw;
+    border: 0.08vw solid rgba(67, 95, 23, 0.24);
+    border-radius: 0.65vw;
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--green-dark);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.72vw;
+    font-weight: 600;
+    padding: 0 0.8vw;
+    cursor: pointer;
+}
+
+.public-admin-actions {
+    display: flex;
+    gap: 0.45vw;
+    flex-wrap: wrap;
+}
+
+.public-profile-bio {
+    color: var(--text-dark);
+    max-width: 58vw;
+}
+
+.public-profile-sectionTitle {
+    margin: 1.1vw 0 0.6vw;
+    color: var(--green-dark);
+    font-size: 1.05vw;
+}
+
+.public-posts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17vw, 1fr));
+    gap: 0.9vw;
+}
+
+.public-post-card {
+    border: 0.1vw solid rgba(67, 95, 23, 0.2);
+    border-radius: 0.9vw;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.76);
+    display: grid;
+}
+
+.public-post-image {
+    width: 100%;
+    height: 11vw;
+    object-fit: cover;
+    background: rgba(67, 95, 23, 0.08);
+}
+
+.public-post-body {
+    padding: 0.7vw;
+    display: grid;
+    gap: 0.35vw;
+}
+
+.public-post-type {
+    justify-self: start;
+    font-size: 0.66vw;
+    color: var(--green-dark);
+    background: rgba(67, 95, 23, 0.12);
+    border-radius: 999px;
+    padding: 0.16vw 0.48vw;
+    font-weight: 600;
+}
+
+.public-post-title {
+    margin: 0;
+    color: var(--text-dark);
+    font-size: 0.9vw;
+}
+
+.public-post-description {
+    margin: 0;
+    color: var(--text-dark);
+    font-size: 0.74vw;
+    line-height: 1.35;
+    line-clamp: 3;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.public-post-stats {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.68vw;
+}
+
+.public-post-action {
+    margin-top: 0.2vw;
+    height: 2.1vw;
+    border: none;
+    border-radius: 0.65vw;
+    background: var(--green-dark);
+    color: var(--white);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.74vw;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.public-post-action--report {
+    background: rgba(185, 39, 39, 0.95);
+}
+
+.public-post-action--admin {
+    background: rgba(185, 39, 39, 0.95);
+}
+
+.public-empty {
+    color: var(--text-muted);
+    font-size: 0.9vw;
+}

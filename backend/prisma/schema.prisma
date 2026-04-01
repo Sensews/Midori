@@ -11,6 +11,8 @@ model User {
   id           String                    @id @default(cuid())
   email        String                    @unique
   username     String                    @unique
+  cpf          String?                   @unique
+  phone        String?
   displayName  String
   passwordHash String
   role         String                    @default("USER")
@@ -25,6 +27,11 @@ model User {
   sentMessages Message[]                 @relation("SenderMessages")
   participants ConversationParticipant[]
   moderations  ModerationAction[]        @relation("ModeratorActions")
+  outgoingRequests MessageRequest[]       @relation("OutgoingMessageRequests")
+  incomingRequests MessageRequest[]       @relation("IncomingMessageRequests")
+  reportsSent Report[]                    @relation("ReportsSent")
+  reportsReceived Report[]                @relation("ReportsReceived")
+  reportsReviewed Report[]                @relation("ReportsReviewed")
 }
 
 model Post {
@@ -42,10 +49,56 @@ model Post {
   likes               Like[]
   comments            Comment[]
   moderations         ModerationAction[]
+  messageRequests     MessageRequest[]
+  reports             Report[]
 
   @@index([authorId])
   @@index([type])
   @@index([createdAt])
+}
+
+model Report {
+  id             String   @id @default(cuid())
+  reporterId     String
+  targetUserId   String?
+  postId         String?
+  reason         String
+  details        String?
+  status         String   @default("PENDING")
+  reviewedById   String?
+  adminNote      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  reviewedAt     DateTime?
+
+  reporter   User  @relation("ReportsSent", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetUser User? @relation("ReportsReceived", fields: [targetUserId], references: [id], onDelete: SetNull)
+  post       Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
+  reviewedBy User? @relation("ReportsReviewed", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([reporterId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([postId, createdAt])
+  @@index([status, createdAt])
+}
+
+model MessageRequest {
+  id           String   @id @default(cuid())
+  requesterId  String
+  recipientId  String
+  postId       String
+  introMessage String?
+  status       String   @default("PENDING")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  requester User @relation("OutgoingMessageRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+  recipient User @relation("IncomingMessageRequests", fields: [recipientId], references: [id], onDelete: Cascade)
+  post      Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, status, createdAt])
+  @@index([requesterId, status, createdAt])
+  @@index([postId])
 }
 
 model Like {

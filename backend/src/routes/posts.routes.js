@@ -1,13 +1,98 @@
 const express = require('express');
 
 const prisma = require('../prisma');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, authenticateOptional } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const { saveCompressedImage } = require('../utils/storage');
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+router.get('/interactions/me', authenticate, async (req, res) => {
+  const likedPosts = await prisma.post.findMany({
+    where: {
+      likes: {
+        some: {
+          userId: req.user.userId,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      author: {
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+        },
+      },
+      likes: {
+        select: {
+          userId: true,
+        },
+      },
+      _count: {
+        select: {
+          likes: true,
+          comments: true,
+        },
+      },
+    },
+    take: 30,
+  });
+
+  const commentedPostsRaw = await prisma.post.findMany({
+    where: {
+      comments: {
+        some: {
+          userId: req.user.userId,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      author: {
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+        },
+      },
+      likes: {
+        select: {
+          userId: true,
+        },
+      },
+      _count: {
+        select: {
+          likes: true,
+          comments: true,
+        },
+      },
+    },
+    take: 30,
+  });
+
+  const dedupCommentsMap = new Map();
+  commentedPostsRaw.forEach((post) => {
+    if (!dedupCommentsMap.has(post.id)) {
+      dedupCommentsMap.set(post.id, post);
+    }
+  });
+
+  const withLikedByMe = (post) => ({
+    ...post,
+    likedByMe: post.likes.some((like) => like.userId === req.user.userId),
+  });
+
+  return res.json({
+    likedPosts: likedPosts.map(withLikedByMe),
+    commentedPosts: [...dedupCommentsMap.values()].map(withLikedByMe),
+  });
+});
+
+router.get('/', authenticateOptional, async (req, res) => {
   const { type, author } = req.query;
 
   const where = {};
@@ -34,6 +119,11 @@ router.get('/', async (req, res) => {
           avatarUrl: true,
         },
       },
+      likes: {
+        select: {
+          userId: true,
+        },
+      },
       _count: {
         select: {
           likes: true,
@@ -43,10 +133,18 @@ router.get('/', async (req, res) => {
     },
   });
 
-  return res.json({ posts });
+  const mappedPosts = posts.map((post) => {
+    const likedByMe = req.user ? post.likes.some((like) => like.userId === req.user.userId) : false;
+    return {
+      ...post,
+      likedByMe,
+    };
+  });
+
+  return res.json({ posts: mappedPosts });
 });
 
-router.get('/:postId', async (req, res) => {
+router.get('/:postId', authenticateOptional, async (req, res) => {
   const { postId } = req.params;
 
   const post = await prisma.post.findUnique({
@@ -84,7 +182,14 @@ router.get('/:postId', async (req, res) => {
     return res.status(404).json({ error: 'Post não encontrado.' });
   }
 
-  return res.json({ post });
+  const likedByMe = req.user ? post.likes.some((like) => like.userId === req.user.userId) : false;
+
+  return res.json({
+    post: {
+      ...post,
+      likedByMe,
+    },
+  });
 });
 
 router.post('/', authenticate, upload.single('image'), async (req, res) => {

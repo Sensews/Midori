@@ -45,7 +45,7 @@
         <a class="top-nav__btn" href="perfil.html" aria-label="Perfil">
             <img class="top-nav__icon--profile" src="Assets/perfil.svg" alt="" aria-hidden="true">
         </a>
-        <a class="top-nav__btn" href="#" id="home-shortcut" aria-label="Início">
+        <a class="top-nav__btn" href="home.html" id="home-shortcut" aria-label="Início">
             <img src="Assets/home.svg" alt="" aria-hidden="true">
         </a>
     </nav>
@@ -61,6 +61,11 @@
                 <div class="messages-search">
                     <input id="conversation-search" type="text" placeholder="Buscar conversa..." autocomplete="off">
                 </div>
+
+                <section class="message-requests" aria-label="Solicitações de mensagem">
+                    <h3>Solicitações pendentes</h3>
+                    <div id="request-list" class="request-list"></div>
+                </section>
 
                 <ul class="conversation-list" id="conversation-list" aria-label="Lista de conversas"></ul>
             </aside>

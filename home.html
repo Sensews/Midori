@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Midori - Home</title>
+    <link rel="icon" type="image/svg+xml" href="Assets/icon.svg">
+
+    <style>
+        html { visibility: hidden; }
+    </style>
+    <script>
+        (function () {
+            try {
+                var token = window.localStorage.getItem('midori.auth.token');
+                if (!token) {
+                    window.location.replace('index.html');
+                    return;
+                }
+                document.documentElement.style.visibility = 'visible';
+            } catch (_err) {
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="home.css">
+</head>
+<body>
+    <div class="header-bg">
+        <img src="Assets/Header.svg" alt="" aria-hidden="true">
+    </div>
+
+    <div class="logo">
+        <img src="Assets/logo.svg" alt="Midori">
+    </div>
+
+    <nav class="top-nav" aria-label="Atalhos">
+        <a class="top-nav__btn" href="mensagens.html" aria-label="Mensagens">
+            <img src="Assets/mail.svg" alt="" aria-hidden="true">
+        </a>
+        <a class="top-nav__btn" href="perfil.html" aria-label="Perfil">
+            <img class="top-nav__icon--profile" src="Assets/perfil.svg" alt="" aria-hidden="true">
+        </a>
+    </nav>
+
+    <main class="main-content home-main">
+        <section class="swipe-stage" aria-label="Feed principal">
+            <article class="swipe-card" id="swipe-card" role="button" tabindex="0" aria-label="Abrir detalhes da postagem">
+                <div id="swipe-feedback" class="swipe-card__feedback" aria-hidden="true"></div>
+                <div class="swipe-card__imageWrap">
+                    <img id="card-image" class="swipe-card__image" src="" alt="Imagem da postagem" draggable="false">
+                </div>
+                <div class="swipe-card__content">
+                    <div class="swipe-card__meta">
+                        <span id="card-type" class="badge">Doação</span>
+                        <span id="card-author" class="author">@autor</span>
+                    </div>
+                    <h2 id="card-title">Carregando...</h2>
+                    <p id="card-description"></p>
+                    <div class="swipe-card__stats">
+                        <span id="card-likes">0 curtidas</span>
+                        <span id="card-comments">0 comentários</span>
+                    </div>
+                </div>
+            </article>
+            <div id="home-empty" class="home-empty" hidden>
+                <img src="Assets/Mido.svg" alt="Mido dizendo que não há posts" class="home-empty__img">
+                <p class="home-empty__title">Sem posts por enquanto 🌿</p>
+                <p class="home-empty__text">A galera tá meio calma hoje. Volte daqui a pouco.</p>
+                <button id="home-reload-posts" type="button" class="home-empty__btn">Ver posts novamente</button>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal-overlay" id="post-modal-overlay" hidden>
+        <div class="modal-motion">
+            <div class="modal modal--home" role="dialog" aria-modal="true" aria-labelledby="home-post-title">
+                <div class="modal__head">
+                    <h2 class="modal__title" id="home-post-title">Postagem</h2>
+                    <button class="modal__close" id="home-post-close" type="button" aria-label="Fechar" onclick="window.__midoriForceCloseModal && window.__midoriForceCloseModal()">×</button>
+                </div>
+                <div class="modal__body home-modal__body">
+                    <img id="home-post-image" class="home-modal__image" src="" alt="Imagem da postagem">
+                    <p id="home-post-author" class="home-modal__author"></p>
+                    <p id="home-post-description" class="home-modal__description"></p>
+
+                    <div class="home-modal__buttons">
+                        <button id="home-like-btn" class="modal__saveBtn" type="button">Curtir</button>
+                        <button id="home-report-btn" class="modal__saveBtn home-modal__reportBtn" type="button">Denunciar</button>
+                    </div>
+
+                    <div class="home-modal__commentBox">
+                        <h3>Comentários</h3>
+                        <div id="home-comments-list" class="home-modal__comments"></div>
+                        <form id="home-comment-form" class="home-modal__commentForm">
+                            <input id="home-comment-input" type="text" maxlength="160" placeholder="Comentar..." required>
+                            <button type="submit" class="modal__saveBtn">Enviar</button>
+                        </form>
+                    </div>
+
+                    <div class="home-modal__messageBox">
+                        <h3>Solicitar conversa com o dono</h3>
+                        <form id="home-request-form" class="home-modal__requestForm">
+                            <input id="home-request-input" type="text" maxlength="200" placeholder="Mensagem inicial (opcional)">
+                            <button type="submit" class="modal__saveBtn">Enviar solicitação</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bg">
+        <img src="Assets/Footer.svg" alt="" aria-hidden="true">
+    </div>
+
+    <script>
+        (function () {
+            function forceCloseModal() {
+                var overlay = document.getElementById('post-modal-overlay');
+                if (!overlay) return;
+                overlay.hidden = true;
+                overlay.classList.remove('is-open');
+                overlay.classList.remove('is-closing');
+                document.body.classList.remove('modal-open');
+            }
+
+            window.__midoriForceCloseModal = forceCloseModal;
+
+            document.addEventListener('click', function (event) {
+                var closeBtn = event.target.closest('#home-post-close');
+                var overlay = document.getElementById('post-modal-overlay');
+                if (closeBtn) {
+                    forceCloseModal();
+                    return;
+                }
+                if (overlay && event.target === overlay) {
+                    forceCloseModal();
+                }
+            }, true);
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') forceCloseModal();
+            }, true);
+        })();
+    </script>
+    <script src="api-client.js"></script>
+    <script src="home.js"></script>
+</body>
+</html>

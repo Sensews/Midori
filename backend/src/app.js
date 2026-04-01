@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth.routes');
 const profileRoutes = require('./routes/profile.routes');
 const postRoutes = require('./routes/posts.routes');
 const messageRoutes = require('./routes/messages.routes');
+const reportRoutes = require('./routes/reports.routes');
 const adminRoutes = require('./routes/admin.routes');
 
 const app = express();
@@ -29,6 +30,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.use('/api', (_req, res) => {

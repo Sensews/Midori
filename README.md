@@ -19,8 +19,17 @@ O backend implementa:
 - Compressão de imagem no upload (`sharp` → `webp`)
 - Likes e comentários relacionais
 - Mensagens entre usuários (conversas + mensagens)
+- Solicitação de mensagem por post (com aceite do dono)
 - Permissões por papel (`USER` e `SUPERADMIN`)
 - Moderação de postagens por superadmin
+
+## Home (feed principal)
+
+- Página: [home.html](home.html)
+- Exibe postagens no centro em formato swipe
+- `←` pula para próxima postagem
+- `→` curte e avança
+- Clique no card abre detalhes para curtir, comentar e enviar solicitação de mensagem ao dono
 
 ## Como rodar
 
@@ -91,6 +100,9 @@ API padrão em `http://localhost:4000`.
 - `GET /api/messages/threads`
 - `GET /api/messages/threads/:threadId/messages`
 - `POST /api/messages/threads/:threadId/messages`
+- `POST /api/messages/requests` (solicitar conversa a partir de um post)
+- `GET /api/messages/requests/incoming` (solicitações pendentes para o dono)
+- `POST /api/messages/requests/:requestId/respond` (aceitar/recusar)
 
 ### Admin
 

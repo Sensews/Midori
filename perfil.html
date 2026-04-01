@@ -42,10 +42,13 @@
     </div>
 
     <nav class="top-nav" aria-label="Atalhos">
+        <a class="top-nav__btn" id="admin-shortcut" href="admin-denuncias.html" aria-label="Painel de denúncias" hidden>
+            <img src="Assets/COnfiguar icon.svg" alt="" aria-hidden="true">
+        </a>
         <a class="top-nav__btn" href="mensagens.html" aria-label="Mensagens">
             <img src="Assets/mail.svg" alt="" aria-hidden="true">
         </a>
-        <a class="top-nav__btn" href="perfil.html" aria-label="Início">
+        <a class="top-nav__btn" href="home.html" aria-label="Início">
             <img src="Assets/home.svg" alt="" aria-hidden="true">
         </a>
     </nav>
@@ -54,6 +57,9 @@
         <section class="profile-shell" aria-label="Tela de perfil">
             <button class="icon-btn settings-btn" id="btn-settings" type="button" aria-label="Configurações">
                 <img src="Assets/COnfiguar icon.svg" alt="" aria-hidden="true">
+            </button>
+            <button class="icon-btn logout-btn" id="btn-logout" type="button" aria-label="Sair">
+                <span>Sair</span>
             </button>
 
             <div class="profile-grid">
@@ -81,6 +87,8 @@
                                     <span>Ingressou em março/2026</span>
                                 </li>
                             </ul>
+
+                            <button class="profile-interactions-btn" id="btn-interactions" type="button">Ver curtidos e comentados</button>
                         </div>
                     </header>
 
@@ -159,10 +167,37 @@
                             </article>
                         </div>
                     </section>
+
                 </div>
             </div>
         </section>
     </main>
+
+    <div class="modal-overlay" id="interactions-overlay" hidden>
+        <div class="modal-motion">
+            <div class="modal modal--interactions" role="dialog" aria-modal="true" aria-labelledby="interactions-title">
+                <div class="modal__head">
+                    <h2 class="modal__title" id="interactions-title">Suas interações</h2>
+                    <button class="modal__close" id="interactions-close" type="button" aria-label="Fechar">×</button>
+                </div>
+
+                <div class="modal__body">
+                    <div class="interactions-tabs" role="tablist" aria-label="Tipos de interação">
+                        <button id="interactions-tab-liked" class="interactions-tab is-active" type="button" role="tab" aria-selected="true">Curtidos</button>
+                        <button id="interactions-tab-commented" class="interactions-tab" type="button" role="tab" aria-selected="false">Comentados</button>
+                    </div>
+
+                    <div id="interactions-liked-panel" class="interactions-panel is-active" role="tabpanel">
+                        <div id="liked-posts-grid" class="activity-grid" role="list" aria-label="Posts curtidos"></div>
+                    </div>
+
+                    <div id="interactions-commented-panel" class="interactions-panel" role="tabpanel" hidden>
+                        <div id="commented-posts-grid" class="activity-grid" role="list" aria-label="Posts comentados"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal Criar Postagem -->
     <div class="modal-overlay" id="post-overlay" hidden>

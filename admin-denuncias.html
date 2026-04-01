@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Midori - Painel de Denúncias</title>
+    <link rel="icon" type="image/svg+xml" href="Assets/icon.svg">
+
+    <style>
+        html { visibility: hidden; }
+    </style>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin-denuncias.css">
+</head>
+<body>
+    <div class="header-bg">
+        <img src="Assets/Header.svg" alt="" aria-hidden="true">
+    </div>
+
+    <div class="logo">
+        <img src="Assets/logo.svg" alt="Midori">
+    </div>
+
+    <nav class="top-nav" aria-label="Atalhos">
+        <a class="top-nav__btn" href="home.html" aria-label="Início">
+            <img src="Assets/home.svg" alt="" aria-hidden="true">
+        </a>
+        <a class="top-nav__btn" href="perfil.html" aria-label="Perfil">
+            <img src="Assets/perfil.svg" alt="" aria-hidden="true">
+        </a>
+    </nav>
+
+    <main class="main-content admin-main">
+        <section class="admin-shell" aria-label="Painel de denúncias">
+            <header class="admin-head">
+                <h1>Denúncias</h1>
+                <p>Ações disponíveis: ver perfil/post relacionado, banir usuário e apagar post.</p>
+                <div class="admin-searchRow">
+                    <input id="report-username-search" type="text" placeholder="Buscar denúncias por @username">
+                    <button id="report-search-btn" type="button">Buscar</button>
+                    <button id="report-clear-btn" type="button">Limpar</button>
+                </div>
+                <div class="admin-filters">
+                    <button type="button" class="admin-filter is-active" data-status="ALL">Todas</button>
+                    <button type="button" class="admin-filter" data-status="PENDING">Pendentes</button>
+                    <button type="button" class="admin-filter" data-status="RESOLVED">Resolvidas</button>
+                    <button type="button" class="admin-filter" data-status="REJECTED">Rejeitadas</button>
+                </div>
+            </header>
+
+            <div id="admin-reports" class="admin-reports"></div>
+
+            <section class="admin-users" aria-label="Gestão de usuários">
+                <header class="admin-users__head">
+                    <h2>Usuários</h2>
+                    <p>Busque por username e veja total de postagens/comentários.</p>
+                    <div class="admin-searchRow">
+                        <input id="admin-user-search" type="text" placeholder="Buscar usuário por nome">
+                        <button id="admin-user-search-btn" type="button">Buscar</button>
+                        <button id="admin-user-clear-btn" type="button">Limpar</button>
+                    </div>
+                </header>
+                <div id="admin-users-list" class="admin-users__list"></div>
+            </section>
+        </section>
+    </main>
+
+    <div class="footer-bg">
+        <img src="Assets/Footer.svg" alt="" aria-hidden="true">
+    </div>
+
+    <script src="api-client.js"></script>
+    <script src="admin-denuncias.js"></script>
+</body>
+</html>

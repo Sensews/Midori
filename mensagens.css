@@ -96,6 +96,65 @@
     padding: 0 1.25vw 0.9vw;
 }
 
+.message-requests {
+    padding: 0 1.25vw 0.8vw;
+    display: grid;
+    gap: 0.45vw;
+}
+
+.message-requests h3 {
+    font-size: 0.76vw;
+    color: var(--green-dark);
+}
+
+.request-list {
+    display: grid;
+    gap: 0.4vw;
+    max-height: 9vw;
+    overflow-y: auto;
+}
+
+.request-item {
+    border: 0.1vw solid rgba(67, 95, 23, 0.14);
+    background: rgba(255, 255, 255, 0.72);
+    border-radius: 0.7vw;
+    padding: 0.55vw;
+    display: grid;
+    gap: 0.3vw;
+}
+
+.request-item p {
+    font-size: 0.68vw;
+    color: var(--text-dark);
+    line-height: 1.35;
+}
+
+.request-item__actions {
+    display: flex;
+    gap: 0.35vw;
+}
+
+.request-item__btn {
+    border: none;
+    border-radius: 0.5vw;
+    height: 1.75vw;
+    padding: 0 0.55vw;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.64vw;
+    cursor: pointer;
+}
+
+.request-item__btn--accept {
+    background: var(--green-dark);
+    color: var(--white);
+}
+
+.request-item__btn--decline {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-dark);
+    border: 0.08vw solid rgba(67, 95, 23, 0.2);
+}
+
 .messages-search input {
     width: 100%;
     height: 2.6vw;

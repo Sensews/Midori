@@ -9,6 +9,7 @@
     }
 
     const conversationList = document.getElementById('conversation-list');
+    const requestList = document.getElementById('request-list');
     const searchInput = document.getElementById('conversation-search');
     const chatHeadName = document.getElementById('chat-name');
     const chatHeadStatus = document.getElementById('chat-status');
@@ -22,6 +23,7 @@
     const state = {
         query: '',
         threads: [],
+        requests: [],
         activeThreadId: null,
         messagesByThread: {},
         me: null,
@@ -44,6 +46,56 @@
 
     function getActiveThread() {
         return state.threads.find((thread) => thread.id === state.activeThreadId) || null;
+    }
+
+    function renderRequests() {
+        if (!requestList) return;
+
+        if (!state.requests.length) {
+            requestList.innerHTML = '<p class="chat-empty">Nenhuma solicitação pendente.</p>';
+            return;
+        }
+
+        requestList.innerHTML = state.requests
+            .map((request) => {
+                const requesterName = request.requester?.displayName || request.requester?.username || 'Usuário';
+                const postTitle = request.post?.title || 'postagem';
+                return `
+                    <article class="request-item" data-request-id="${request.id}">
+                        <p><strong>${escapeHtml(requesterName)}</strong> está enviando uma solicitação de mensagem sobre <strong>${escapeHtml(postTitle)}</strong>.</p>
+                        <div class="request-item__actions">
+                            <button type="button" class="request-item__btn request-item__btn--accept" data-action="accept">Aceitar</button>
+                            <button type="button" class="request-item__btn request-item__btn--decline" data-action="decline">Recusar</button>
+                        </div>
+                    </article>
+                `;
+            })
+            .join('');
+
+        requestList.querySelectorAll('.request-item__btn').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const action = button.dataset.action;
+                const card = button.closest('.request-item');
+                const requestId = card?.dataset.requestId;
+                if (!requestId) return;
+
+                try {
+                    const response = await api.respondMessageRequest(requestId, action === 'accept');
+                    state.requests = state.requests.filter((request) => request.id !== requestId);
+                    renderRequests();
+
+                    if (action === 'accept' && response.conversationId) {
+                        await loadThreads();
+                        state.activeThreadId = response.conversationId;
+                        await loadThreadMessages(response.conversationId);
+                        renderConversationList();
+                        renderActiveChat();
+                    }
+                } catch (error) {
+                    window.alert(error.message || 'Erro ao responder solicitação.');
+                }
+            });
+        });
     }
 
     function renderConversationList() {
@@ -126,6 +178,19 @@
         state.messagesByThread[threadId] = Array.isArray(response.messages) ? response.messages : [];
     }
 
+    async function loadThreads() {
+        const threadsResponse = await api.listThreads();
+        state.threads = Array.isArray(threadsResponse.threads) ? threadsResponse.threads : [];
+        if (!state.activeThreadId) {
+            state.activeThreadId = state.threads[0]?.id || null;
+        }
+    }
+
+    async function loadRequests() {
+        const response = await api.listIncomingRequests();
+        state.requests = Array.isArray(response.requests) ? response.requests : [];
+    }
+
     async function handleSendMessage(e) {
         e.preventDefault();
 
@@ -159,14 +224,16 @@
             const meResponse = await api.getMe();
             state.me = meResponse.user;
 
-            const threadsResponse = await api.listThreads();
-            state.threads = Array.isArray(threadsResponse.threads) ? threadsResponse.threads : [];
-            state.activeThreadId = state.threads[0]?.id || null;
+            await Promise.all([
+                loadThreads(),
+                loadRequests(),
+            ]);
 
             if (state.activeThreadId) {
                 await loadThreadMessages(state.activeThreadId);
             }
 
+            renderRequests();
             renderConversationList();
             renderActiveChat();
 
@@ -179,7 +246,10 @@
 
             if (homeShortcut) {
                 homeShortcut.addEventListener('click', (e) => {
-                    e.preventDefault();
+                    const href = homeShortcut.getAttribute('href');
+                    if (!href || href === '#') {
+                        e.preventDefault();
+                    }
                 });
             }
         } catch (error) {

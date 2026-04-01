@@ -98,10 +98,10 @@
         return data;
     }
 
-    async function register({ email, username, displayName, password }) {
+    async function register({ email, username, displayName, password, cpf, phone }) {
         const data = await request('/auth/register', {
             method: 'POST',
-            body: JSON.stringify({ email, username, displayName, password }),
+            body: JSON.stringify({ email, username, displayName, password, cpf, phone }),
         });
         setSession(data.token, data.user);
         return data;
@@ -115,10 +115,14 @@
         return request('/profile/me');
     }
 
-    async function updateMyProfile({ displayName, bio }) {
+    async function getPublicProfile(username) {
+        return request(`/profile/${encodeURIComponent(String(username || '').toLowerCase())}`);
+    }
+
+    async function updateMyProfile({ displayName, bio, cpf, phone }) {
         return request('/profile/me', {
             method: 'PUT',
-            body: JSON.stringify({ displayName, bio }),
+            body: JSON.stringify({ displayName, bio, cpf, phone }),
         });
     }
 
@@ -196,6 +200,10 @@
         });
     }
 
+    async function getMyPostInteractions() {
+        return request('/posts/interactions/me');
+    }
+
     async function listThreads() {
         return request('/messages/threads');
     }
@@ -208,6 +216,79 @@
         return request(`/messages/threads/${encodeURIComponent(threadId)}/messages`, {
             method: 'POST',
             body: JSON.stringify({ content }),
+        });
+    }
+
+    async function createMessageRequest(postId, introMessage) {
+        return request('/messages/requests', {
+            method: 'POST',
+            body: JSON.stringify({ postId, introMessage }),
+        });
+    }
+
+    async function listIncomingRequests() {
+        return request('/messages/requests/incoming');
+    }
+
+    async function respondMessageRequest(requestId, accept) {
+        return request(`/messages/requests/${encodeURIComponent(requestId)}/respond`, {
+            method: 'POST',
+            body: JSON.stringify({ accept: Boolean(accept) }),
+        });
+    }
+
+    async function createReport({ targetUserId, postId, reason, details }) {
+        return request('/reports', {
+            method: 'POST',
+            body: JSON.stringify({ targetUserId, postId, reason, details }),
+        });
+    }
+
+    async function adminListReports(status) {
+        const params = new URLSearchParams();
+        if (status) params.set('status', status);
+        const query = params.toString() ? `?${params}` : '';
+        return request(`/admin/reports${query}`);
+    }
+
+    async function adminListReportsWithFilters({ status, username } = {}) {
+        const params = new URLSearchParams();
+        if (status) params.set('status', status);
+        if (username) params.set('username', String(username).trim().toLowerCase());
+        const query = params.toString() ? `?${params}` : '';
+        return request(`/admin/reports${query}`);
+    }
+
+    async function adminUpdateReport(reportId, { status, adminNote }) {
+        return request(`/admin/reports/${encodeURIComponent(reportId)}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status, adminNote }),
+        });
+    }
+
+    async function adminBanUser(userId, reason) {
+        return request(`/admin/users/${encodeURIComponent(userId)}/ban`, {
+            method: 'POST',
+            body: JSON.stringify({ reason: reason || '' }),
+        });
+    }
+
+    async function adminUnbanUser(userId) {
+        return request(`/admin/users/${encodeURIComponent(userId)}/unban`, {
+            method: 'POST',
+            body: JSON.stringify({}),
+        });
+    }
+
+    async function adminListUsers(query) {
+        const suffix = query ? `?query=${encodeURIComponent(String(query).trim().toLowerCase())}` : '';
+        return request(`/admin/users${suffix}`);
+    }
+
+    async function adminDeletePost(postId, reason) {
+        return request(`/admin/posts/${encodeURIComponent(postId)}`, {
+            method: 'DELETE',
+            body: JSON.stringify({ reason: reason || '' }),
         });
     }
 
@@ -224,6 +305,7 @@
         register,
         getMe,
         getMyProfile,
+        getPublicProfile,
         updateMyProfile,
         uploadMyAvatar,
         listPosts,
@@ -233,8 +315,20 @@
         deletePost,
         toggleLike,
         addComment,
+        getMyPostInteractions,
         listThreads,
         getThreadMessages,
         sendThreadMessage,
+        createMessageRequest,
+        listIncomingRequests,
+        respondMessageRequest,
+        createReport,
+        adminListReports,
+        adminListReportsWithFilters,
+        adminUpdateReport,
+        adminBanUser,
+        adminUnbanUser,
+        adminListUsers,
+        adminDeletePost,
     };
 })();

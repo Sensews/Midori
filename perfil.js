@@ -15,6 +15,8 @@
     let me = null;
     let profile = null;
     let cachedPosts = [];
+    let likedPostsCache = [];
+    let commentedPostsCache = [];
     let editingPostId = null;
     let activeViewPostId = null;
     let activeViewImageIndex = 0;
@@ -24,6 +26,9 @@
     let draftAvatarSrc = DEFAULT_AVATAR_SRC;
 
     const btnSettings = document.getElementById('btn-settings');
+    const btnLogout = document.getElementById('btn-logout');
+    const btnInteractions = document.getElementById('btn-interactions');
+    const adminShortcut = document.getElementById('admin-shortcut');
     const overlay = document.getElementById('settings-overlay');
     const btnClose = document.getElementById('settings-close');
     const btnCancel = document.getElementById('settings-cancel');
@@ -42,6 +47,14 @@
 
     const donationGrid = document.querySelector('.donation-grid');
     const expoGrid = document.querySelector('.expo-grid');
+    const likedPostsGrid = document.getElementById('liked-posts-grid');
+    const commentedPostsGrid = document.getElementById('commented-posts-grid');
+    const interactionsOverlay = document.getElementById('interactions-overlay');
+    const interactionsClose = document.getElementById('interactions-close');
+    const interactionsTabLiked = document.getElementById('interactions-tab-liked');
+    const interactionsTabCommented = document.getElementById('interactions-tab-commented');
+    const interactionsLikedPanel = document.getElementById('interactions-liked-panel');
+    const interactionsCommentedPanel = document.getElementById('interactions-commented-panel');
 
     const postOverlay = document.getElementById('post-overlay');
     const postForm = document.getElementById('post-form');
@@ -87,6 +100,34 @@
         return (value || '').toString().trim();
     }
 
+    function getProfileExtrasStorageKey() {
+        return `midori.profile.extras.v1.${me?.id || 'anonymous'}`;
+    }
+
+    function loadProfileExtras() {
+        try {
+            const raw = window.localStorage.getItem(getProfileExtrasStorageKey());
+            if (!raw) return { location: '', favorite: '' };
+            const parsed = JSON.parse(raw);
+            return {
+                location: clampLen(parsed?.location || '', 60),
+                favorite: clampLen(parsed?.favorite || '', LIMITS.favorite),
+            };
+        } catch {
+            return { location: '', favorite: '' };
+        }
+    }
+
+    function saveProfileExtras(extras) {
+        try {
+            window.localStorage.setItem(getProfileExtrasStorageKey(), JSON.stringify({
+                location: clampLen(extras?.location || '', 60),
+                favorite: clampLen(extras?.favorite || '', LIMITS.favorite),
+            }));
+        } catch {
+        }
+    }
+
     function clampLen(value, max) {
         const text = safeTrim(value);
         return text.length > max ? text.slice(0, max) : text;
@@ -116,6 +157,7 @@
 
         return {
             id: apiPost.id,
+            authorId: apiPost.authorId || apiPost.author?.id || null,
             type: toUiType(apiPost.type),
             title: apiPost.title,
             description: apiPost.description,
@@ -135,7 +177,13 @@
     }
 
     function findPostById(postId) {
-        return cachedPosts.find((post) => post.id === postId) || null;
+        const localPost = cachedPosts.find((post) => post.id === postId);
+        if (localPost) return localPost;
+
+        const likedPost = likedPostsCache.find((post) => post.id === postId);
+        if (likedPost) return likedPost;
+
+        return commentedPostsCache.find((post) => post.id === postId) || null;
     }
 
     function setCounter(el, value, max) {
@@ -160,8 +208,8 @@
 
         if (nameEl) nameEl.textContent = profile.displayName || profile.username || 'Usuário';
         if (bioEl) bioEl.textContent = profile.bio || '';
-        if (favoriteEl) favoriteEl.textContent = profile.favorite || 'Magnolia';
-        if (locationEl) locationEl.textContent = profile.location || 'Curitiba, PR';
+        if (favoriteEl) favoriteEl.textContent = profile.favorite || '';
+        if (locationEl) locationEl.textContent = profile.location || '';
 
         const nextAvatar = profile.avatarUrl || DEFAULT_AVATAR_SRC;
         if (avatarEl) avatarEl.src = nextAvatar;
@@ -230,6 +278,83 @@
         }
     }
 
+    function buildActivityItem(post) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'activity-item';
+        button.dataset.postId = post.id;
+        button.innerHTML = `
+            <div class="activity-item__title">${escapeHtml(post.title || 'Sem título')}</div>
+            <div class="activity-item__meta">@${escapeHtml(post.authorName || 'usuario')} • ${post.likes || 0} curtidas • ${post.comments?.length || 0} comentários</div>
+        `;
+        return button;
+    }
+
+    function renderActivityGrid(container, posts, emptyMessage) {
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (!posts.length) {
+            container.innerHTML = `<p class="activity-empty">${escapeHtml(emptyMessage)}</p>`;
+            return;
+        }
+
+        posts.forEach((post) => {
+            container.appendChild(buildActivityItem(post));
+        });
+    }
+
+    function renderInteractions() {
+        renderActivityGrid(likedPostsGrid, likedPostsCache, 'Você ainda não curtiu nenhum post.');
+        renderActivityGrid(commentedPostsGrid, commentedPostsCache, 'Você ainda não comentou em posts.');
+    }
+
+    function hasOpenOverlay() {
+        return Boolean(
+            (overlay && !overlay.hidden)
+            || (postOverlay && !postOverlay.hidden)
+            || (viewPostOverlay && !viewPostOverlay.hidden)
+            || (viewPostZoomOverlay && !viewPostZoomOverlay.hidden)
+            || (interactionsOverlay && !interactionsOverlay.hidden)
+        );
+    }
+
+    function setInteractionsTab(tab) {
+        const isCommented = tab === 'commented';
+        interactionsTabLiked?.classList.toggle('is-active', !isCommented);
+        interactionsTabLiked?.setAttribute('aria-selected', String(!isCommented));
+        interactionsTabCommented?.classList.toggle('is-active', isCommented);
+        interactionsTabCommented?.setAttribute('aria-selected', String(isCommented));
+
+        if (interactionsLikedPanel) interactionsLikedPanel.hidden = isCommented;
+        if (interactionsCommentedPanel) interactionsCommentedPanel.hidden = !isCommented;
+    }
+
+    function openInteractionsModal() {
+        if (!interactionsOverlay) return;
+        renderInteractions();
+        setInteractionsTab('liked');
+        interactionsOverlay.hidden = false;
+        interactionsOverlay.classList.add('is-open');
+        document.body.classList.add('modal-open');
+        document.body.classList.add('modal-scene');
+    }
+
+    function closeInteractionsModal() {
+        if (!interactionsOverlay) return;
+        interactionsOverlay.classList.remove('is-open');
+        interactionsOverlay.classList.add('is-closing');
+
+        setTimeout(() => {
+            interactionsOverlay.hidden = true;
+            interactionsOverlay.classList.remove('is-closing');
+            if (!hasOpenOverlay()) {
+                document.body.classList.remove('modal-open');
+                document.body.classList.remove('modal-scene');
+            }
+        }, MODAL_ANIM_MS);
+    }
+
     function setViewPostTab(tab) {
         const isComments = tab === 'comments';
 
@@ -296,6 +421,7 @@
 
     function renderViewPost(post) {
         const typeLabel = post.type === 'expo' ? 'Exposição' : 'Doação';
+        const isOwner = Boolean(me?.id && post.authorId && post.authorId === me.id);
         if (viewPostType) viewPostType.textContent = typeLabel;
         if (viewPostTypeComments) viewPostTypeComments.textContent = typeLabel;
         if (viewPostTitleText) viewPostTitleText.textContent = post.title || 'Sem título';
@@ -303,10 +429,12 @@
         if (viewPostDescription) viewPostDescription.textContent = post.description || '';
         if (viewPostLikeCount) viewPostLikeCount.textContent = String(post.likes || 0);
         if (viewPostLikeBtn) viewPostLikeBtn.classList.toggle('is-active', Boolean(post.likedByMe));
+        if (viewPostEditBtn) viewPostEditBtn.hidden = !isOwner;
+        if (viewPostDeleteBtn) viewPostDeleteBtn.hidden = !isOwner;
 
         if (viewPostCompleteBtn) {
             const isDonation = post.type === 'donation';
-            viewPostCompleteBtn.hidden = !isDonation;
+            viewPostCompleteBtn.hidden = !isDonation || !isOwner;
             viewPostCompleteBtn.classList.toggle('is-active', Boolean(post.donationCompleted));
             viewPostCompleteBtn.textContent = post.donationCompleted ? 'Doação concluída ✓' : 'Marcar como concluída';
         }
@@ -492,22 +620,64 @@
         renderCachedPosts();
     }
 
+    async function refreshInteractions() {
+        const response = await api.getMyPostInteractions();
+        const liked = Array.isArray(response.likedPosts) ? response.likedPosts : [];
+        const commented = Array.isArray(response.commentedPosts) ? response.commentedPosts : [];
+
+        likedPostsCache = liked.map((post) => {
+            const mapped = mapPost(post);
+            return {
+                ...mapped,
+                authorName: post.author?.username || post.author?.displayName || 'usuario',
+            };
+        });
+
+        commentedPostsCache = commented.map((post) => {
+            const mapped = mapPost(post);
+            return {
+                ...mapped,
+                authorName: post.author?.username || post.author?.displayName || 'usuario',
+            };
+        });
+
+        renderInteractions();
+    }
+
     async function initData() {
         const meResponse = await api.getMe();
         me = meResponse.user;
+        if (adminShortcut) {
+            adminShortcut.hidden = me.role !== 'SUPERADMIN';
+        }
 
         const profileResponse = await api.getMyProfile();
+        const extras = loadProfileExtras();
         profile = {
             ...profileResponse.profile,
-            favorite: 'Magnolia',
-            location: 'Curitiba, PR',
+            favorite: extras.favorite || '',
+            location: extras.location || '',
         };
 
         applyProfileToUI();
         await refreshPosts();
+        await refreshInteractions();
     }
 
     btnSettings?.addEventListener('click', openModal);
+    btnLogout?.addEventListener('click', () => {
+        const ok = window.confirm('Deseja sair da sua conta?');
+        if (!ok) return;
+        api.clearSession();
+        window.location.href = 'index.html';
+    });
+    btnInteractions?.addEventListener('click', openInteractionsModal);
+    interactionsClose?.addEventListener('click', closeInteractionsModal);
+    interactionsOverlay?.addEventListener('click', (e) => {
+        if (e.target === interactionsOverlay) closeInteractionsModal();
+    });
+    interactionsTabLiked?.addEventListener('click', () => setInteractionsTab('liked'));
+    interactionsTabCommented?.addEventListener('click', () => setInteractionsTab('commented'));
     btnClose?.addEventListener('click', closeModal);
     btnCancel?.addEventListener('click', closeModal);
 
@@ -518,6 +688,7 @@
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
         if (overlay && !overlay.hidden) closeModal();
+        if (interactionsOverlay && !interactionsOverlay.hidden) closeInteractionsModal();
         if (viewPostOverlay && !viewPostOverlay.hidden) closeViewPostModal();
         if (viewPostZoomOverlay && !viewPostZoomOverlay.hidden) closeZoomModal();
     });
@@ -575,6 +746,8 @@
 
         const name = clampLen(inputName?.value || '', LIMITS.name);
         const bio = clampLen(inputBio?.value || '', LIMITS.bio);
+        const location = clampLen(inputLocation?.value || '', 60);
+        const favorite = clampLen(inputFavorite?.value || '', LIMITS.favorite);
 
         if (!name) {
             window.alert('O nome de usuário é obrigatório.');
@@ -587,9 +760,10 @@
             profile = {
                 ...profile,
                 ...updateResponse.user,
-                location: clampLen(inputLocation?.value || profile.location || '', 60) || profile.location,
-                favorite: clampLen(inputFavorite?.value || profile.favorite || '', LIMITS.favorite) || profile.favorite,
+                location,
+                favorite,
             };
+            saveProfileExtras({ location, favorite });
 
             if (draftAvatarFile) {
                 const avatarResponse = await api.uploadMyAvatar(draftAvatarFile);
@@ -704,6 +878,10 @@
 
         const current = findPostById(activeViewPostId);
         if (!current || current.type !== 'donation') return;
+        if (!me?.id || current.authorId !== me.id) {
+            window.alert('Você só pode encerrar doações das suas próprias postagens.');
+            return;
+        }
 
         try {
             await api.updatePost(activeViewPostId, {
@@ -721,12 +899,22 @@
         if (!activeViewPostId) return;
         const post = findPostById(activeViewPostId);
         if (!post) return;
+        if (!me?.id || post.authorId !== me.id) {
+            window.alert('Você só pode editar suas próprias postagens.');
+            return;
+        }
         closeViewPostModal();
         setTimeout(() => openPostModal(post), MODAL_ANIM_MS);
     });
 
     viewPostDeleteBtn?.addEventListener('click', async () => {
         if (!activeViewPostId) return;
+        const post = findPostById(activeViewPostId);
+        if (!post) return;
+        if (!me?.id || post.authorId !== me.id) {
+            window.alert('Você só pode deletar suas próprias postagens.');
+            return;
+        }
         const ok = window.confirm('Deseja realmente deletar esta postagem?');
         if (!ok) return;
 
@@ -800,6 +988,20 @@
         const card = e.target.closest('[data-post-id]');
         if (!card) return;
         openViewPostModal(card.dataset.postId);
+    });
+
+    likedPostsGrid?.addEventListener('click', (e) => {
+        const card = e.target.closest('[data-post-id]');
+        if (!card) return;
+        closeInteractionsModal();
+        setTimeout(() => openViewPostModal(card.dataset.postId), MODAL_ANIM_MS);
+    });
+
+    commentedPostsGrid?.addEventListener('click', (e) => {
+        const card = e.target.closest('[data-post-id]');
+        if (!card) return;
+        closeInteractionsModal();
+        setTimeout(() => openViewPostModal(card.dataset.postId), MODAL_ANIM_MS);
     });
 
     document.querySelectorAll('[data-action="add-donation"]').forEach((btn) => {

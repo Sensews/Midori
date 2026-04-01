@@ -285,6 +285,33 @@ a {
     margin-top: 0.2vw;
 }
 
+.password-strength {
+    margin-top: 0.3vw;
+    display: grid;
+    gap: 0.2vw;
+}
+
+.password-strength__bar {
+    height: 0.35vw;
+    width: 100%;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.09);
+    overflow: hidden;
+}
+
+#password-strength-fill {
+    display: block;
+    height: 100%;
+    width: 0%;
+    border-radius: inherit;
+    transition: width 0.2s ease, background-color 0.2s ease;
+}
+
+#password-strength-text {
+    font-size: 0.7vw;
+    color: var(--text-muted);
+}
+
 /* ========== FORM LINK (Esqueci a Senha) ========== */
 .form-link-group {
     text-align: right;

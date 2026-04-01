@@ -549,6 +549,45 @@ body.modal-open .top-nav {
     height: 2.4vw;
 }
 
+.logout-btn {
+    position: absolute;
+    top: 1.45vw;
+    right: 1.4vw;
+    min-width: 6.2vw;
+    height: 2.4vw;
+    border-radius: 0.8vw;
+    background: rgba(67, 95, 23, 0.12);
+    border: 0.1vw solid rgba(67, 95, 23, 0.28);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.65vw;
+}
+
+.logout-btn span {
+    font-size: 0.78vw;
+    font-weight: 700;
+    color: var(--green-dark);
+}
+
+.profile-interactions-btn {
+    margin-top: 0.9vw;
+    height: 2.3vw;
+    border: 0.1vw solid rgba(67, 95, 23, 0.32);
+    background: rgba(255, 255, 255, 0.62);
+    color: var(--green-dark);
+    border-radius: 0.75vw;
+    padding: 0 0.9vw;
+    font-size: 0.76vw;
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+}
+
+.profile-interactions-btn:hover {
+    opacity: 0.9;
+}
+
 .add-btn {
     width: 2.6vw;
     height: 2.6vw;
@@ -607,49 +646,53 @@ body.modal-open .top-nav {
     object-fit: cover;
 }
 
-.avatar--default img {
-    width: 80%;
-    height: 80%;
+.avatar.avatar--default img {
+    width: 86%;
+    height: 86%;
     object-fit: contain;
-}
-
-.profile-name {
-    font-size: 1.2vw;
-    font-weight: 700;
-    color: var(--text-dark);
-    line-height: 1.2;
-    margin-bottom: 0.35vw;
 }
 
 .profile-user {
     min-width: 0;
 }
 
+.profile-name {
+    margin: 0;
+    font-size: 1.95vw;
+    line-height: 1.08;
+    color: var(--text-dark);
+    font-weight: 700;
+}
+
 .profile-bio {
-    font-size: 0.75vw;
-    color: var(--text-muted);
+    margin: 0.2vw 0 0;
+    font-size: 0.9vw;
+    color: var(--text-dark);
     line-height: 1.35;
-    margin-bottom: 0.9vw;
-    max-width: 26vw;
-    height: calc(1.35em * 3);
-    overflow-y: auto;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    max-width: 21vw;
+    line-clamp: 2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .profile-meta {
+    margin: 0.45vw 0 0;
+    padding: 0;
     list-style: none;
     display: grid;
-    gap: 0.55vw;
+    gap: 0.25vw;
 }
 
 .profile-meta__item {
     display: flex;
     align-items: center;
-    gap: 0.55vw;
-    font-size: 0.8vw;
-    color: var(--green-dark);
-    font-weight: 500;
+    gap: 0.45vw;
+    color: var(--text-dark);
+    font-size: 0.92vw;
+    line-height: 1.25;
 }
 
 .profile-meta__item img {
@@ -708,6 +751,49 @@ body.modal-open .top-nav {
     height: 3.35vw;
 }
 
+.section-head--simple {
+    justify-content: flex-start;
+}
+
+.section-head--simple {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.7vw;
+}
+
+.section-inline-title {
+    font-size: 0.95vw;
+    color: var(--green-dark);
+    font-weight: 700;
+}
+
+.activity-filter {
+    display: inline-flex;
+    gap: 0.25vw;
+    background: rgba(255, 255, 255, 0.5);
+    border: 0.08vw solid rgba(67, 95, 23, 0.2);
+    border-radius: 0.65vw;
+    padding: 0.2vw;
+}
+
+.activity-filter__btn {
+    border: none;
+    background: transparent;
+    color: var(--green-dark);
+    font-size: 0.64vw;
+    font-weight: 600;
+    border-radius: 0.5vw;
+    height: 1.5vw;
+    padding: 0 0.45vw;
+    cursor: pointer;
+}
+
+.activity-filter__btn.is-active {
+    background: var(--green-dark);
+    color: var(--white);
+}
+
 .section-sub {
     margin-top: 0.3vw;
     font-size: 0.72vw;
@@ -730,6 +816,80 @@ body.modal-open .top-nav {
 
 .section--expo {
     flex: 1;
+}
+
+.activity-grid {
+    margin-top: 0.45vw;
+    display: grid;
+    gap: 0.45vw;
+    max-height: 18vw;
+    overflow-y: auto;
+    padding-right: 0.3vw;
+}
+
+.activity-item {
+    width: 100%;
+    text-align: left;
+    border: 0.1vw solid rgba(67, 95, 23, 0.22);
+    border-radius: 0.75vw;
+    background: rgba(255, 255, 255, 0.62);
+    padding: 0.48vw 0.58vw;
+    cursor: pointer;
+}
+
+.activity-item__title {
+    font-size: 0.75vw;
+    color: var(--text-dark);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.activity-item__meta {
+    margin-top: 0.15vw;
+    font-size: 0.66vw;
+    color: var(--text-muted);
+}
+
+.activity-empty {
+    font-size: 0.7vw;
+    color: var(--text-muted);
+}
+
+.modal--interactions {
+    width: min(42vw, 760px);
+}
+
+.interactions-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.45vw;
+}
+
+.interactions-tab {
+    border: 0.1vw solid rgba(67, 95, 23, 0.3);
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--green-dark);
+    border-radius: 0.65vw;
+    height: 2.2vw;
+    font-size: 0.75vw;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.interactions-tab.is-active {
+    background: var(--green-dark);
+    color: var(--white);
+}
+
+.interactions-panel {
+    margin-top: 0.5vw;
+}
+
+.interactions-panel[hidden] {
+    display: none;
 }
 
 /* Doando */
