@@ -406,7 +406,7 @@
         viewPostThumbs.innerHTML = photos
             .map((src, index) => `
                 <button type="button" class="view-post__thumb ${index === activeViewImageIndex ? 'is-active' : ''}" data-index="${index}" aria-label="Ver imagem ${index + 1}">
-                    <img src="${src}" alt="Miniatura ${index + 1}">
+                    <img src="${escapeHtml(src)}" alt="Miniatura ${index + 1}">
                 </button>
             `)
             .join('');

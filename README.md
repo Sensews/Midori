@@ -50,10 +50,13 @@ npm install
 	Campos mínimos:
 	- `DATABASE_URL`
 	- `JWT_SECRET`
+	- `ACCESS_TOKEN_SECRET`
+	- `REFRESH_TOKEN_SECRET`
 	- `SUPERADMIN_EMAIL`
 	- `SUPERADMIN_USERNAME`
 	- `SUPERADMIN_PASSWORD`
 	- `DEMO_USER_PASSWORD`
+	- `CORS_ORIGIN` (opcional, lista separada por vírgula)
 
 	> Use valores fortes e únicos. Nunca commite o arquivo `.env`.
 
@@ -83,6 +86,9 @@ API padrão em `http://localhost:4000`.
 - Se um segredo vazar em commit/PR, **revogue e gere outro** imediatamente.
 - Atualize os valores no `.env` local (ou cofre de segredos do deploy).
 - O seed lê credenciais apenas de variáveis de ambiente; não mantenha senhas fixas no código.
+- A API aplica rate limiting global e para autenticação.
+- Defina `CORS_ORIGIN` em produção para permitir somente os domínios do frontend.
+- A autenticação usa `access token` e `refresh token` em cookies `httpOnly` com rotação.
 - Recomenda-se rodar scanner de segredos no pre-commit (ex.: `ggshield` ou `gitleaks`).
 
 ## Principais rotas
@@ -91,6 +97,8 @@ API padrão em `http://localhost:4000`.
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/refresh`
+- `POST /api/auth/logout`
 - `GET /api/auth/me`
 
 ### Perfil

@@ -4,6 +4,7 @@
     const TOKEN_KEY = 'midori.auth.token';
     const USER_KEY = 'midori.auth.user';
     const API_BASE_KEY = 'midori.api.base';
+    const SESSION_MARKER = 'cookie-session';
 
     function getDefaultBaseUrl() {
         if (window.location.protocol === 'file:') {
@@ -28,6 +29,11 @@
         window.localStorage.setItem(API_BASE_KEY, clean);
     }
 
+    function buildApiUrl(path) {
+        const base = getApiBaseUrl();
+        return `${base}${path.startsWith('/') ? path : `/${path}`}`;
+    }
+
     function getToken() {
         return window.localStorage.getItem(TOKEN_KEY) || '';
     }
@@ -43,33 +49,35 @@
     }
 
     function setSession(token, user) {
-        if (token) window.localStorage.setItem(TOKEN_KEY, token);
+        window.localStorage.setItem(TOKEN_KEY, SESSION_MARKER);
         if (user) window.localStorage.setItem(USER_KEY, JSON.stringify(user));
     }
 
     function clearSession() {
+        try {
+            fetch(buildApiUrl('/auth/logout'), {
+                method: 'POST',
+                credentials: 'include',
+            });
+        } catch {
+        }
         window.localStorage.removeItem(TOKEN_KEY);
         window.localStorage.removeItem(USER_KEY);
     }
 
-    async function request(path, options = {}) {
-        const base = getApiBaseUrl();
-        const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
-        const token = getToken();
+    async function rawRequest(path, options = {}) {
+        const url = buildApiUrl(path);
         const headers = new Headers(options.headers || {});
 
-        if (!options.isFormData) {
+        if (!options.isFormData && !headers.has('Content-Type')) {
             headers.set('Content-Type', 'application/json');
-        }
-
-        if (token) {
-            headers.set('Authorization', `Bearer ${token}`);
         }
 
         const response = await fetch(url, {
             method: options.method || 'GET',
             headers,
             body: options.body,
+            credentials: 'include',
         });
 
         let payload = null;
@@ -77,6 +85,44 @@
             payload = await response.json();
         } catch {
             payload = null;
+        }
+
+        return { response, payload };
+    }
+
+    async function refreshSession() {
+        const { response } = await rawRequest('/auth/refresh', {
+            method: 'POST',
+            body: JSON.stringify({}),
+            skipAuthRefresh: true,
+        });
+
+        return response.ok;
+    }
+
+    async function request(path, options = {}) {
+        const { response, payload } = await rawRequest(path, options);
+
+        const isAuthPath = path.startsWith('/auth/login')
+            || path.startsWith('/auth/register')
+            || path.startsWith('/auth/refresh')
+            || path.startsWith('/auth/logout');
+
+        if (response.status === 401 && !options.skipAuthRefresh && !isAuthPath) {
+            const refreshed = await refreshSession();
+            if (refreshed) {
+                const retried = await rawRequest(path, { ...options, skipAuthRefresh: true });
+                if (retried.response.ok) {
+                    return retried.payload;
+                }
+
+                const retryErrorMessage = retried.payload?.error || `Erro ${retried.response.status}`;
+                const retryError = new Error(retryErrorMessage);
+                retryError.status = retried.response.status;
+                throw retryError;
+            }
+
+            clearSession();
         }
 
         if (!response.ok) {
@@ -94,7 +140,7 @@
             method: 'POST',
             body: JSON.stringify({ login: loginValue, password }),
         });
-        setSession(data.token, data.user);
+        setSession(null, data.user);
         return data;
     }
 
@@ -103,7 +149,7 @@
             method: 'POST',
             body: JSON.stringify({ email, username, displayName, password, cpf, phone }),
         });
-        setSession(data.token, data.user);
+        setSession(null, data.user);
         return data;
     }
 

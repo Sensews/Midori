@@ -142,7 +142,7 @@
                         </div>
 
                         <div class="admin-report__actions">
-                            <button type="button" class="admin-action admin-action--link" data-action="open-profile" data-username="${targetUsername}">Ver perfil denunciado</button>
+                            <button type="button" class="admin-action admin-action--link" data-action="open-profile" data-username="${escapeHtml(targetUsername)}">Ver perfil denunciado</button>
                             ${hasPost ? `<button type="button" class="admin-action admin-action--warn" data-action="delete-post" data-post-id="${report.post.id}">Apagar post</button>` : ''}
                             ${report.targetUser?.id ? `<button type="button" class="admin-action admin-action--warn" data-action="ban-user" data-user-id="${report.targetUser.id}">Banir usuário</button>` : ''}
                             <button type="button" class="admin-action admin-action--ok" data-action="resolve">Marcar resolvida</button>

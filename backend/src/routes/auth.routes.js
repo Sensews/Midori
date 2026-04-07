@@ -1,11 +1,100 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('node:crypto');
 
 const prisma = require('../prisma');
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME_REGEX = /^[a-z0-9_]{3,30}$/;
+
+const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
+const REFRESH_TOKEN_TTL_DAYS = 14;
+
+function getAccessTokenSecret() {
+  return process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET;
+}
+
+function getRefreshTokenSecret() {
+  return process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET;
+}
+
+function hashRefreshToken(token) {
+  return crypto.createHash('sha256').update(String(token || '')).digest('hex');
+}
+
+function getCookieConfig() {
+  const isProduction = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'lax',
+    path: '/',
+  };
+}
+
+function issueAccessToken(user) {
+  return jwt.sign(
+    {
+      userId: user.id,
+      role: user.role,
+      type: 'access',
+    },
+    getAccessTokenSecret(),
+    { expiresIn: `${ACCESS_TOKEN_TTL_SECONDS}s` }
+  );
+}
+
+function issueRefreshToken(user) {
+  return jwt.sign(
+    {
+      userId: user.id,
+      type: 'refresh',
+    },
+    getRefreshTokenSecret(),
+    { expiresIn: `${REFRESH_TOKEN_TTL_DAYS}d` }
+  );
+}
+
+async function persistRefreshToken(userId, refreshToken) {
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      refreshTokenHash: hashRefreshToken(refreshToken),
+      refreshTokenExpiresAt: expiresAt,
+    },
+  });
+}
+
+function setAuthCookies(res, accessToken, refreshToken) {
+  const cookieConfig = getCookieConfig();
+  res.cookie('midori_access', accessToken, {
+    ...cookieConfig,
+    maxAge: ACCESS_TOKEN_TTL_SECONDS * 1000,
+  });
+  res.cookie('midori_refresh', refreshToken, {
+    ...cookieConfig,
+    maxAge: REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000,
+  });
+}
+
+function clearAuthCookies(res) {
+  const cookieConfig = getCookieConfig();
+  res.clearCookie('midori_access', cookieConfig);
+  res.clearCookie('midori_refresh', cookieConfig);
+}
+
+async function startSession(res, user) {
+  const accessToken = issueAccessToken(user);
+  const refreshToken = issueRefreshToken(user);
+
+  await persistRefreshToken(user.id, refreshToken);
+  setAuthCookies(res, accessToken, refreshToken);
+}
 
 function normalizeCpf(value) {
   const raw = String(value || '').trim();
@@ -43,17 +132,6 @@ function isValidCpfDigits(cpfDigits) {
   return cpfDigits.endsWith(`${dig10}${dig11}`);
 }
 
-function signToken(user) {
-  return jwt.sign(
-    {
-      userId: user.id,
-      role: user.role,
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: '7d' }
-  );
-}
-
 router.post('/register', async (req, res) => {
   const { email, username, displayName, password, cpf, phone } = req.body;
 
@@ -69,6 +147,14 @@ router.post('/register', async (req, res) => {
   const normalizedUsername = username.toLowerCase().trim();
   const normalizedCpf = normalizeCpf(cpf);
   const normalizedPhone = normalizePhone(phone);
+
+  if (!EMAIL_REGEX.test(normalizedEmail)) {
+    return res.status(400).json({ error: 'Email inválido.' });
+  }
+
+  if (!USERNAME_REGEX.test(normalizedUsername)) {
+    return res.status(400).json({ error: 'username inválido. Use 3-30 caracteres com letras minúsculas, números e _.' });
+  }
 
   if (normalizedCpf === '__INVALID__') {
     return res.status(400).json({ error: 'CPF inválido. Use 000.000.000-00.' });
@@ -113,10 +199,9 @@ router.post('/register', async (req, res) => {
     },
   });
 
-  const token = signToken(user);
+  await startSession(res, user);
 
   return res.status(201).json({
-    token,
     user: {
       id: user.id,
       email: user.email,
@@ -160,10 +245,9 @@ router.post('/login', async (req, res) => {
     return res.status(401).json({ error: 'Credenciais inválidas.' });
   }
 
-  const token = signToken(user);
+  await startSession(res, user);
 
   return res.json({
-    token,
     user: {
       id: user.id,
       email: user.email,
@@ -176,6 +260,79 @@ router.post('/login', async (req, res) => {
       bio: user.bio,
     },
   });
+});
+
+router.post('/refresh', async (req, res) => {
+  const refreshToken = req.cookies?.midori_refresh;
+  if (!refreshToken) {
+    return res.status(401).json({ error: 'Sessão expirada.' });
+  }
+
+  try {
+    const payload = jwt.verify(refreshToken, getRefreshTokenSecret());
+    if (payload.type !== 'refresh') {
+      clearAuthCookies(res);
+      return res.status(401).json({ error: 'Token de sessão inválido.' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        role: true,
+        refreshTokenHash: true,
+        refreshTokenExpiresAt: true,
+      },
+    });
+
+    if (!user || user.role === 'BANNED') {
+      clearAuthCookies(res);
+      return res.status(401).json({ error: 'Sessão inválida.' });
+    }
+
+    const isHashMatch = user.refreshTokenHash === hashRefreshToken(refreshToken);
+    const isNotExpired = user.refreshTokenExpiresAt && new Date(user.refreshTokenExpiresAt).getTime() > Date.now();
+
+    if (!isHashMatch || !isNotExpired) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          refreshTokenHash: null,
+          refreshTokenExpiresAt: null,
+        },
+      });
+      clearAuthCookies(res);
+      return res.status(401).json({ error: 'Sessão expirada.' });
+    }
+
+    await startSession(res, user);
+    return res.json({ ok: true });
+  } catch {
+    clearAuthCookies(res);
+    return res.status(401).json({ error: 'Sessão inválida.' });
+  }
+});
+
+router.post('/logout', async (req, res) => {
+  const refreshToken = req.cookies?.midori_refresh;
+  if (refreshToken) {
+    try {
+      const payload = jwt.verify(refreshToken, getRefreshTokenSecret());
+      if (payload?.userId) {
+        await prisma.user.update({
+          where: { id: payload.userId },
+          data: {
+            refreshTokenHash: null,
+            refreshTokenExpiresAt: null,
+          },
+        });
+      }
+    } catch {
+    }
+  }
+
+  clearAuthCookies(res);
+  return res.status(204).send();
 });
 
 router.get('/me', authenticate, async (req, res) => {

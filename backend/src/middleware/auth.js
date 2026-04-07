@@ -1,17 +1,36 @@
 const jwt = require('jsonwebtoken');
 const prisma = require('../prisma');
 
-async function authenticate(req, res, next) {
-  const authHeader = req.headers.authorization;
+function getAccessTokenSecret() {
+  return process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET;
+}
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+function extractToken(req) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7);
+  }
+
+  if (req.cookies?.midori_access) {
+    return req.cookies.midori_access;
+  }
+
+  return '';
+}
+
+async function authenticate(req, res, next) {
+  const token = extractToken(req);
+
+  if (!token) {
     return res.status(401).json({ error: 'Token não informado.' });
   }
 
-  const token = authHeader.slice(7);
-
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = jwt.verify(token, getAccessTokenSecret());
+    if (payload.type && payload.type !== 'access') {
+      return res.status(401).json({ error: 'Token inválido ou expirado.' });
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
       select: { id: true, role: true },
@@ -36,17 +55,20 @@ async function authenticate(req, res, next) {
 }
 
 async function authenticateOptional(req, _res, next) {
-  const authHeader = req.headers.authorization;
+  const token = extractToken(req);
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!token) {
     req.user = null;
     return next();
   }
 
-  const token = authHeader.slice(7);
-
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = jwt.verify(token, getAccessTokenSecret());
+    if (payload.type && payload.type !== 'access') {
+      req.user = null;
+      return next();
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
       select: { id: true, role: true },
