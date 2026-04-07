@@ -2,8 +2,6 @@ require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const prisma = require('../src/prisma');
 
-const DEMO_PASSWORD = 'SenhaForte123!';
-
 const demoUsers = [
   {
     email: 'alice.mori@midori.test',
@@ -62,9 +60,10 @@ async function main() {
   const email = process.env.SUPERADMIN_EMAIL;
   const username = process.env.SUPERADMIN_USERNAME;
   const password = process.env.SUPERADMIN_PASSWORD;
+  const demoPassword = process.env.DEMO_USER_PASSWORD;
 
-  if (!email || !username || !password) {
-    throw new Error('Defina SUPERADMIN_EMAIL, SUPERADMIN_USERNAME e SUPERADMIN_PASSWORD no .env.');
+  if (!email || !username || !password || !demoPassword) {
+    throw new Error('Defina SUPERADMIN_EMAIL, SUPERADMIN_USERNAME, SUPERADMIN_PASSWORD e DEMO_USER_PASSWORD no .env.');
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
@@ -86,7 +85,7 @@ async function main() {
     },
   });
 
-  const demoPasswordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
+  const demoPasswordHash = await bcrypt.hash(demoPassword, 12);
 
   for (const userData of demoUsers) {
     await prisma.user.upsert({
@@ -190,7 +189,7 @@ async function main() {
   console.log('Superadmin criado/atualizado com sucesso.');
   console.log(`Perfis de teste criados: ${allDemoUsers.length}`);
   console.log(`Postagens de teste criadas: ${createdPosts.length}`);
-  console.log(`Senha padrão dos perfis de teste: ${DEMO_PASSWORD}`);
+  console.log('Senha dos perfis de teste definida via DEMO_USER_PASSWORD (arquivo .env).');
 }
 
 main()

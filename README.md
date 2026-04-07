@@ -47,6 +47,16 @@ npm install
 
 3. Crie o arquivo `.env` com base no `.env.example`.
 
+	Campos mínimos:
+	- `DATABASE_URL`
+	- `JWT_SECRET`
+	- `SUPERADMIN_EMAIL`
+	- `SUPERADMIN_USERNAME`
+	- `SUPERADMIN_PASSWORD`
+	- `DEMO_USER_PASSWORD`
+
+	> Use valores fortes e únicos. Nunca commite o arquivo `.env`.
+
 4. Gere o cliente Prisma e aplique migração:
 
 ```bash
@@ -67,6 +77,13 @@ npm run dev
 ```
 
 API padrão em `http://localhost:4000`.
+
+## Segurança de segredos
+
+- Se um segredo vazar em commit/PR, **revogue e gere outro** imediatamente.
+- Atualize os valores no `.env` local (ou cofre de segredos do deploy).
+- O seed lê credenciais apenas de variáveis de ambiente; não mantenha senhas fixas no código.
+- Recomenda-se rodar scanner de segredos no pre-commit (ex.: `ggshield` ou `gitleaks`).
 
 ## Principais rotas
 
