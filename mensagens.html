@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Midori - Mensagens</title>
+    <link rel="icon" type="image/svg+xml" href="Assets/icon.svg">
+
+    <style>
+        html { visibility: hidden; }
+    </style>
+    <script>
+        (function () {
+            try {
+                var token = window.localStorage.getItem('midori.auth.token');
+                if (!token) {
+                    window.location.replace('index.html');
+                    return;
+                }
+                document.documentElement.style.visibility = 'visible';
+            } catch (_err) {
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="mensagens.css">
+</head>
+<body>
+    <div class="header-bg">
+        <img src="Assets/Header.svg" alt="" aria-hidden="true">
+    </div>
+
+    <div class="logo">
+        <img src="Assets/logo.svg" alt="Midori">
+    </div>
+
+    <nav class="top-nav" aria-label="Atalhos">
+        <a class="top-nav__btn" href="perfil.html" aria-label="Perfil">
+            <img class="top-nav__icon--profile" src="Assets/perfil.svg" alt="" aria-hidden="true">
+        </a>
+        <a class="top-nav__btn" href="home.html" id="home-shortcut" aria-label="Início">
+            <img src="Assets/home.svg" alt="" aria-hidden="true">
+        </a>
+    </nav>
+
+    <main class="main-content messages-main">
+        <section class="messages-shell" aria-label="Tela de mensagens">
+            <aside class="messages-sidebar" aria-label="Conversas">
+                <header class="messages-sidebar__head">
+                    <h1>Mensagens</h1>
+                    <p>Converse sobre adoções e exposições</p>
+                </header>
+
+                <div class="messages-search">
+                    <input id="conversation-search" type="text" placeholder="Buscar conversa..." autocomplete="off">
+                </div>
+
+                <section class="message-requests" aria-label="Solicitações de mensagem">
+                    <h3>Solicitações pendentes</h3>
+                    <div id="request-list" class="request-list"></div>
+                </section>
+
+                <ul class="conversation-list" id="conversation-list" aria-label="Lista de conversas"></ul>
+            </aside>
+
+            <section class="chat-panel" aria-label="Conversa ativa">
+                <header class="chat-head" id="chat-head">
+                    <div class="chat-head__avatar" id="chat-avatar">M</div>
+                    <div class="chat-head__meta">
+                        <h2 id="chat-name">Selecione uma conversa</h2>
+                        <p id="chat-status">Sem conversa ativa</p>
+                    </div>
+                </header>
+
+                <div class="chat-messages" id="chat-messages" aria-live="polite"></div>
+
+                <form class="chat-input" id="chat-form">
+                    <input id="chat-input" type="text" placeholder="Digite sua mensagem..." maxlength="300" autocomplete="off" disabled>
+                    <button type="submit" id="chat-send" disabled>Enviar</button>
+                </form>
+            </section>
+        </section>
+    </main>
+
+    <div class="footer-bg">
+        <img src="Assets/Footer.svg" alt="" aria-hidden="true">
+    </div>
+
+    <script src="api-client.js"></script>
+    <script src="mensagens.js"></script>
+</body>
+</html>

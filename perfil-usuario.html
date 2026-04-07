@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Midori - Perfil do Usuário</title>
+    <link rel="icon" type="image/svg+xml" href="Assets/icon.svg">
+
+    <style>
+        html { visibility: hidden; }
+    </style>
+    <script>
+        (function () {
+            try {
+                var token = window.localStorage.getItem('midori.auth.token');
+                if (!token) {
+                    window.location.replace('index.html');
+                    return;
+                }
+                document.documentElement.style.visibility = 'visible';
+            } catch (_err) {
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="perfil-usuario.css">
+</head>
+<body>
+    <div class="header-bg">
+        <img src="Assets/Header.svg" alt="" aria-hidden="true">
+    </div>
+
+    <div class="logo">
+        <img src="Assets/logo.svg" alt="Midori">
+    </div>
+
+    <nav class="top-nav" aria-label="Atalhos">
+        <a class="top-nav__btn" href="home.html" aria-label="Início">
+            <img src="Assets/home.svg" alt="" aria-hidden="true">
+        </a>
+        <a class="top-nav__btn" href="mensagens.html" aria-label="Mensagens">
+            <img src="Assets/mail.svg" alt="" aria-hidden="true">
+        </a>
+        <a class="top-nav__btn" href="perfil.html" aria-label="Meu perfil">
+            <img src="Assets/perfil.svg" alt="" aria-hidden="true">
+        </a>
+    </nav>
+
+    <main class="main-content public-profile-main">
+        <section class="public-profile-shell" aria-label="Perfil público">
+            <header class="public-profile-head">
+                <div class="public-profile-avatarWrap">
+                    <img id="public-avatar" class="public-profile-avatar" src="Assets/Mido.svg" alt="Avatar do usuário">
+                </div>
+                <div class="public-profile-meta">
+                    <h1 id="public-name" class="public-profile-name">Carregando...</h1>
+                    <p id="public-username" class="public-profile-username"></p>
+                    <p id="public-bio" class="public-profile-bio"></p>
+                    <p id="public-stats" class="public-profile-stats"></p>
+                    <button id="public-report-user" class="public-profile-reportBtn" type="button">Denunciar usuário</button>
+                    <div id="public-admin-actions" class="public-admin-actions" hidden>
+                        <button id="public-admin-ban" class="public-profile-reportBtn" type="button">Banir usuário</button>
+                        <button id="public-admin-open" class="public-profile-adminBtn" type="button">Abrir painel admin</button>
+                    </div>
+                </div>
+            </header>
+
+            <section>
+                <h2 class="public-profile-sectionTitle">Postagens</h2>
+                <div id="public-posts" class="public-posts-grid" role="list" aria-label="Postagens do usuário"></div>
+            </section>
+        </section>
+    </main>
+
+    <div class="footer-bg">
+        <img src="Assets/Footer.svg" alt="" aria-hidden="true">
+    </div>
+
+    <script src="api-client.js"></script>
+    <script src="perfil-usuario.js"></script>
+</body>
+</html>

@@ -194,6 +194,12 @@
                             autocomplete="new-password"
                             required
                         >
+                        <div class="password-strength" id="password-strength" aria-live="polite" hidden>
+                            <div class="password-strength__bar">
+                                <span id="password-strength-fill"></span>
+                            </div>
+                            <small id="password-strength-text">Força da senha: fraca</small>
+                        </div>
                         <span class="error-message" id="reg-password-error"></span>
                     </div>
 
@@ -209,7 +215,7 @@
     <div class="footer-bg">
         <img src="Assets/Footer.svg" alt="" aria-hidden="true">
     </div>
-
+    <script src="api-client.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
