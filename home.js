@@ -320,7 +320,7 @@
         }
 
         modalComments.innerHTML = comments
-            .map((comment) => `<p><strong>${comment.user?.displayName || comment.user?.username || 'Usuário'}:</strong> ${comment.content}</p>`)
+            .map((comment) => `<p><strong>${sanitize(comment.user?.displayName || comment.user?.username || 'Usuário')}:</strong> ${sanitize(comment.content || '')}</p>`)
             .join('');
     }
 
