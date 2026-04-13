@@ -26,6 +26,10 @@
     transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
 
+.top-nav__btn[hidden] {
+    display: none !important;
+}
+
 .top-nav__btn:hover {
     opacity: 0.95;
     box-shadow: 0 0.2vw 0.7vw rgba(67, 95, 23, 0.35);
@@ -39,6 +43,11 @@
     width: 3vw;
     height: 3vw;
     filter: brightness(0) invert(1);
+}
+
+#admin-shortcut img {
+    width: 1.5vw;
+    height: 1.5vw;
 }
 
 .profile-shell {
@@ -1173,6 +1182,11 @@ body.modal-open .top-nav {
     .top-nav__btn img {
         width: 6vw;
         height: 6vw;
+    }
+
+    #admin-shortcut img {
+        width: 3vw;
+        height: 3vw;
     }
 
     .donation-grid,

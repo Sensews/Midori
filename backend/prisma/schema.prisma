@@ -34,6 +34,22 @@ model User {
   reportsSent Report[]                    @relation("ReportsSent")
   reportsReceived Report[]                @relation("ReportsReceived")
   reportsReviewed Report[]                @relation("ReportsReviewed")
+  authCodes AuthCode[]
+}
+
+model AuthCode {
+  id         String   @id @default(cuid())
+  userId     String
+  purpose    String
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, createdAt])
+  @@index([expiresAt])
 }
 
 model Post {

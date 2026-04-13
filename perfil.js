@@ -648,7 +648,13 @@
         const meResponse = await api.getMe();
         me = meResponse.user;
         if (adminShortcut) {
-            adminShortcut.hidden = me.role !== 'SUPERADMIN';
+            adminShortcut.hidden = true;
+        }
+        if (adminShortcut) {
+            adminShortcut.hidden = true;
+            if (String(me?.role || '').toUpperCase() === 'SUPERADMIN') {
+                adminShortcut.hidden = false;
+            }
         }
 
         const profileResponse = await api.getMyProfile();

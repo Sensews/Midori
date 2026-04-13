@@ -52,6 +52,13 @@ npm install
 	- `JWT_SECRET`
 	- `ACCESS_TOKEN_SECRET`
 	- `REFRESH_TOKEN_SECRET`
+	- `LOGIN_CHALLENGE_SECRET`
+	- `SMTP_HOST`
+	- `SMTP_PORT`
+	- `SMTP_USER`
+	- `SMTP_PASS`
+	- `SMTP_FROM`
+	- `FRONTEND_BASE_URL` (opcional, recomendado para link de reset)
 	- `SUPERADMIN_EMAIL`
 	- `SUPERADMIN_USERNAME`
 	- `SUPERADMIN_PASSWORD`
@@ -89,6 +96,8 @@ API padrão em `http://localhost:4000`.
 - A API aplica rate limiting global e para autenticação.
 - Defina `CORS_ORIGIN` em produção para permitir somente os domínios do frontend.
 - A autenticação usa `access token` e `refresh token` em cookies `httpOnly` com rotação.
+- O login exige MFA por código enviado ao email do usuário.
+- O fluxo de recuperação de senha envia link único por email.
 - Recomenda-se rodar scanner de segredos no pre-commit (ex.: `ggshield` ou `gitleaks`).
 
 ## Principais rotas
@@ -97,8 +106,12 @@ API padrão em `http://localhost:4000`.
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/login/verify`
 - `POST /api/auth/refresh`
 - `POST /api/auth/logout`
+- `POST /api/auth/password/forgot`
+- `POST /api/auth/password/reset`
+- `POST /api/auth/password/reset-link`
 - `GET /api/auth/me`
 
 ### Perfil
