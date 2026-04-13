@@ -16,10 +16,6 @@ dist/
 build/
 
 # Runtime files
-*.sqlite
-*.sqlite-journal
-backend/dev.db
-backend/dev.db-journal
 backend/uploads/
 
 # OS/editor

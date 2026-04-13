@@ -7,13 +7,9 @@
     "**/CVS/**",
     "**/.DS_Store/**",
     "**/node_modules/**",
-    "**/backend/dev.db",
-    "**/backend/dev.db-journal",
     "**/backend/uploads/**"
   ],
   "files.watcherExclude": {
-    "**/backend/dev.db": true,
-    "**/backend/dev.db-journal": true,
     "**/backend/uploads/**": true
   }
 }

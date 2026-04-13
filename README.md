@@ -1,172 +1,114 @@
 # Midori
 
-Projeto web do Midori com front-end em HTML/CSS/JS e backend Node.js + Prisma (SQLite).
+Projeto acadêmico em desenvolvimento (trabalho de faculdade), com foco em evolução contínua e revisão de segurança ao longo do semestre.
 
-## Estrutura
+Este README foi escrito para onboarding do grupo e configuração local, sem expor detalhes sensíveis de implementação.
 
-- Front-end estático na raiz (`index.html`, `perfil.html`, `mensagens.html`, etc.)
-- Backend em [backend/src/server.js](backend/src/server.js)
-- Banco relacional com Prisma em [backend/prisma/schema.prisma](backend/prisma/schema.prisma)
+## Status do projeto
 
-## Banco e API (completo)
+- Em desenvolvimento ativo.
+- Estrutura e regras podem mudar conforme novas entregas.
+- O banco pode ser recriado do zero a qualquer momento no ambiente local.
 
-O backend implementa:
+## Estrutura geral
 
-- Cadastro/login com hash de senha (`bcrypt`)
-- JWT para autenticação
-- Perfis de usuário
-- Posts (doação/exposição)
-- Compressão de imagem no upload (`sharp` → `webp`)
-- Likes e comentários relacionais
-- Mensagens entre usuários (conversas + mensagens)
-- Solicitação de mensagem por post (com aceite do dono)
-- Permissões por papel (`USER` e `SUPERADMIN`)
-- Moderação de postagens por superadmin
+- Front-end estático na raiz do repositório.
+- Backend em [backend](backend).
+- Modelo de dados Prisma em [backend/prisma/schema.prisma](backend/prisma/schema.prisma).
+- Script SQL base para MySQL em [backend/prisma/mysql-init.sql](backend/prisma/mysql-init.sql).
 
-## Home (feed principal)
+## Pré-requisitos
 
-- Página: [home.html](home.html)
-- Exibe postagens no centro em formato swipe
-- `←` pula para próxima postagem
-- `→` curte e avança
-- Clique no card abre detalhes para curtir, comentar e enviar solicitação de mensagem ao dono
+- Node.js 20+ e `npm`.
+- MySQL Server 8+.
+- DBeaver (ou outro cliente SQL).
 
-## Como rodar
+## Configuração do banco (MySQL + DBeaver)
 
-1. Entre na pasta backend:
+1. No MySQL, crie um banco vazio (ex.: `midori`).
+2. No DBeaver, conecte no seu servidor MySQL.
+3. Execute o script [backend/prisma/mysql-init.sql](backend/prisma/mysql-init.sql) no banco criado.
+4. Crie um usuário local com permissão nesse banco (recomendado para desenvolvimento).
+
+## Configuração do backend
+
+1. Entre na pasta do backend:
 
 ```bash
 cd backend
 ```
 
-2. Instale dependências:
+2. Instale as dependências:
 
 ```bash
 npm install
 ```
 
-3. Crie o arquivo `.env` com base no `.env.example`.
+3. Crie o `.env` a partir de [backend/.env.example](backend/.env.example).
 
-	Campos mínimos:
-	- `DATABASE_URL`
-	- `JWT_SECRET`
-	- `ACCESS_TOKEN_SECRET`
-	- `REFRESH_TOKEN_SECRET`
-	- `LOGIN_CHALLENGE_SECRET`
-	- `SMTP_HOST`
-	- `SMTP_PORT`
-	- `SMTP_USER`
-	- `SMTP_PASS`
-	- `SMTP_FROM`
-	- `FRONTEND_BASE_URL` (opcional, recomendado para link de reset)
-	- `SUPERADMIN_EMAIL`
-	- `SUPERADMIN_USERNAME`
-	- `SUPERADMIN_PASSWORD`
-	- `DEMO_USER_PASSWORD`
-	- `CORS_ORIGIN` (opcional, lista separada por vírgula)
+4. Preencha os campos obrigatórios no `.env`:
 
-	> Use valores fortes e únicos. Nunca commite o arquivo `.env`.
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `ACCESS_TOKEN_SECRET`
+- `REFRESH_TOKEN_SECRET`
+- `LOGIN_CHALLENGE_SECRET`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_USER`
+- `SMTP_PASS`
+- `SMTP_FROM`
+- `SUPERADMIN_EMAIL`
+- `SUPERADMIN_USERNAME`
+- `SUPERADMIN_PASSWORD`
+- `DEMO_USER_PASSWORD`
 
-4. Gere o cliente Prisma e aplique migração:
+5. Gere o client Prisma:
 
 ```bash
 npm run prisma:generate
-npm run prisma:migrate
 ```
 
-5. Crie/atualize o superadmin:
+6. Rode o seed (cria/atualiza dados iniciais, como usuário administrativo):
 
 ```bash
 npm run seed
 ```
 
-6. Suba a API:
+7. Suba a API:
 
 ```bash
 npm run dev
 ```
 
-API padrão em `http://localhost:4000`.
+API local padrão: `http://localhost:4000`.
 
-## Segurança de segredos
+## Exemplo de `DATABASE_URL`
 
-- Se um segredo vazar em commit/PR, **revogue e gere outro** imediatamente.
-- Atualize os valores no `.env` local (ou cofre de segredos do deploy).
-- O seed lê credenciais apenas de variáveis de ambiente; não mantenha senhas fixas no código.
-- A API aplica rate limiting global e para autenticação.
-- Defina `CORS_ORIGIN` em produção para permitir somente os domínios do frontend.
-- A autenticação usa `access token` e `refresh token` em cookies `httpOnly` com rotação.
-- O login exige MFA por código enviado ao email do usuário.
-- O fluxo de recuperação de senha envia link único por email.
-- Recomenda-se rodar scanner de segredos no pre-commit (ex.: `ggshield` ou `gitleaks`).
+Use no `.env` (ajuste usuário/senha/host conforme sua máquina):
 
-## Principais rotas
+```env
+DATABASE_URL="mysql://USER:PASSWORD@localhost:3306/midori?connection_limit=10"
+```
 
-### Auth
+## Boas práticas para o grupo
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/login/verify`
-- `POST /api/auth/refresh`
-- `POST /api/auth/logout`
-- `POST /api/auth/password/forgot`
-- `POST /api/auth/password/reset`
-- `POST /api/auth/password/reset-link`
-- `GET /api/auth/me`
+- Nunca subir `.env` para Git.
+- Nunca compartilhar senha/token em print, commit, issue ou README.
+- Cada integrante usa credenciais locais próprias.
+- Se algum segredo vazar, revogar e gerar novo imediatamente.
+- Antes de abrir PR, validar que não há credenciais hardcoded.
 
-### Perfil
+## Fluxo recomendado para novos integrantes
 
-- `GET /api/profile/me`
-- `PUT /api/profile/me`
-- `POST /api/profile/me/avatar` (multipart campo `avatar`)
-- `GET /api/profile/:username`
+1. Clonar o repositório.
+2. Configurar banco MySQL local e executar o SQL base.
+3. Configurar `.env` local.
+4. Rodar `npm install`, `npm run prisma:generate`, `npm run seed`.
+5. Rodar `npm run dev` e validar funcionamento básico.
 
-### Posts / likes / comentários
+## Observações finais
 
-- `GET /api/posts`
-- `GET /api/posts/:postId`
-- `POST /api/posts` (multipart campo opcional `image`)
-- `PUT /api/posts/:postId` (autor ou superadmin)
-- `DELETE /api/posts/:postId` (autor ou superadmin)
-- `POST /api/posts/:postId/likes`
-- `POST /api/posts/:postId/comments`
-- `DELETE /api/posts/comments/:commentId`
-
-### Mensagens
-
-- `POST /api/messages/threads`
-- `GET /api/messages/threads`
-- `GET /api/messages/threads/:threadId/messages`
-- `POST /api/messages/threads/:threadId/messages`
-- `POST /api/messages/requests` (solicitar conversa a partir de um post)
-- `GET /api/messages/requests/incoming` (solicitações pendentes para o dono)
-- `POST /api/messages/requests/:requestId/respond` (aceitar/recusar)
-
-### Admin
-
-- `GET /api/admin/users` (somente `SUPERADMIN`)
-- `DELETE /api/admin/posts/:postId` (somente `SUPERADMIN`)
-
-## Permissões
-
-- Usuário comum (`USER`) pode gerenciar seu próprio perfil, posts, likes e comentários.
-- `SUPERADMIN` pode remover postagens de qualquer perfil.
-- Toda remoção administrativa de post gera registro em `ModerationAction`.
-
-## Observações
-
-- Arquivos enviados ficam em `backend/uploads` e são ignorados no Git.
-- Banco local (`SQLite`) fica em `backend/dev.db` e também é ignorado no Git.
-
-## Escalabilidade (rede maior no futuro)
-
-O front usa [api-client.js](api-client.js) e aceita trocar a URL da API sem alterar código de tela:
-
-- Em runtime, defina `window.MIDORI_API_BASE` antes dos scripts de página.
-- Ou grave `localStorage.setItem('midori.api.base', 'https://seu-dominio/api')`.
-
-Exemplo de evolução futura:
-
-- Hoje: API local em `http://localhost:4000/api` (SQLite).
-- Amanhã: API atrás de WAF/DMZ com banco gerenciado (PostgreSQL/MySQL), mantendo o mesmo frontend.
+- Este documento evita descrever rotas internas, payloads e regras detalhadas para reduzir exposição desnecessária.
+- Para desenvolvimento interno do grupo, alinhem detalhes técnicos em canais privados (reunião, documento interno privado ou pair programming).
 
