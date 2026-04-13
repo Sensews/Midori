@@ -388,26 +388,113 @@ a {
     cursor: pointer;
 }
 
+.main-content::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(0.55vw);
+    -webkit-backdrop-filter: blur(0.55vw);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.auth-modal-open .main-content::after {
+    opacity: 1;
+}
+
+body.auth-modal-scene .header-bg,
+body.auth-modal-scene .footer-bg {
+    z-index: 260;
+}
+
+body.auth-modal-scene .logo {
+    z-index: 260;
+}
+
 .auth-modal {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 300;
+    z-index: 200;
+    background: transparent;
+    display: grid;
+    place-items: center;
+    padding: 4vw;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.65s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .auth-modal.hidden {
     display: none;
 }
 
+.auth-modal.is-open {
+    opacity: 1;
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.auth-modal__motion {
+    transform: translateY(1.4vw) scale(0.70) rotate(-6deg);
+    opacity: 0;
+    will-change: transform, opacity;
+}
+
+.auth-modal.is-open .auth-modal__motion {
+    opacity: 1;
+    animation: auth-modal-pop-in 0.75s cubic-bezier(0.16, 1, 0.30, 1) both;
+}
+
+.auth-modal.is-closing .auth-modal__motion {
+    opacity: 1;
+    animation: auth-modal-pop-out 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes auth-modal-pop-in {
+    0% {
+        opacity: 0;
+        transform: translateY(1.4vw) scale(0.70) rotate(-6deg);
+    }
+
+    70% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1.07) rotate(0deg);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+}
+
+@keyframes auth-modal-pop-out {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+
+    18% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1.03) rotate(-1deg);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(1.2vw) scale(0.70) rotate(6deg);
+    }
+}
+
 .auth-modal__card {
     width: min(92vw, 34vw);
-    background: var(--white);
-    border-radius: 1.2vw;
-    padding: 1.8vw;
-    box-shadow: 0 0.28vw 2.1vw rgba(0, 0, 0, 0.18);
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(0.7vw);
+    -webkit-backdrop-filter: blur(0.7vw);
+    border-radius: 1.4vw;
+    border: 0.12vw solid rgba(67, 95, 23, 0.25);
+    padding: 1.4vw 1.5vw;
+    box-shadow: 0 0.28vw 2.1vw rgba(0, 0, 0, 0.10);
 }
 
 .auth-modal__card h2 {

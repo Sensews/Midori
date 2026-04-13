@@ -72,6 +72,8 @@
     };
 
     const MFA_SESSION_KEY = 'midori.auth.mfa.challenge';
+    const MFA_CLOSE_ANIM_MS = 420;
+    let mfaCloseAnimTimer = 0;
 
     function saveMfaChallenge(challengeToken) {
         try {
@@ -105,7 +107,6 @@
                 clearMfaChallenge();
                 return;
             }
-            console.log('[MFA_DEBUG] restaurando desafio MFA após reload');
             openMfaModal(challengeToken);
         } catch {
             clearMfaChallenge();
@@ -278,24 +279,38 @@
     }
 
     function openMfaModal(challengeToken) {
-        console.log('[MFA_DEBUG] openMfaModal chamado', {
-            hasToken: Boolean(challengeToken),
-            tokenLength: String(challengeToken || '').length,
-        });
+        if (mfaCloseAnimTimer) {
+            window.clearTimeout(mfaCloseAnimTimer);
+            mfaCloseAnimTimer = 0;
+        }
+
         state.loginChallengeToken = challengeToken;
         saveMfaChallenge(challengeToken);
         mfaCodeInput.value = '';
         mfaCodeError.textContent = '';
-        mfaModal.classList.remove('hidden');
+        mfaModal.classList.remove('hidden', 'is-closing');
+        mfaModal.classList.add('is-open');
+        document.body.classList.add('auth-modal-open', 'auth-modal-scene');
         mfaModal.setAttribute('aria-hidden', 'false');
         mfaCodeInput.focus();
     }
 
     function closeMfaModal() {
+        if (mfaModal.classList.contains('hidden')) return;
+
         state.loginChallengeToken = '';
         clearMfaChallenge();
-        mfaModal.classList.add('hidden');
+        mfaModal.classList.remove('is-open');
+        mfaModal.classList.add('is-closing');
         mfaModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('auth-modal-open', 'auth-modal-scene');
+
+        if (mfaCloseAnimTimer) window.clearTimeout(mfaCloseAnimTimer);
+        mfaCloseAnimTimer = window.setTimeout(() => {
+            mfaModal.classList.add('hidden');
+            mfaModal.classList.remove('is-closing');
+            mfaCloseAnimTimer = 0;
+        }, MFA_CLOSE_ANIM_MS);
     }
 
     function openResetModal(email) {
@@ -329,7 +344,6 @@
 
     async function handleLoginSubmit() {
         if (isLoginSubmitting) return;
-        console.log('[MFA_DEBUG] handleLoginSubmit iniciado');
 
         const lockoutMsg = isLockedOut();
         if (lockoutMsg) {
@@ -361,25 +375,17 @@
         setLoading(true);
 
         try {
-            console.log('[MFA_DEBUG] enviando /auth/login', {
-                loginValue,
-                passwordLength: String(password || '').length,
-            });
             const response = await api.startLogin(loginValue, password);
-            console.log('[MFA_DEBUG] resposta /auth/login recebida', response);
             if (!response?.requiresMfa || !response.challengeToken) {
-                console.warn('[MFA_DEBUG] resposta sem dados esperados de MFA', response);
                 throw new Error('Falha ao iniciar verificação de segurança.');
             }
             openMfaModal(response.challengeToken);
         } catch (error) {
-            console.error('[MFA_DEBUG] erro no login MFA', error);
             recordFailedAttempt();
             showError(emailInput, emailError, error.message || 'Email ou senha incorretos.');
         } finally {
             setLoading(false);
             isLoginSubmitting = false;
-            console.log('[MFA_DEBUG] handleLoginSubmit finalizado');
         }
     }
 
@@ -409,12 +415,10 @@
 
     form.addEventListener('submit', function (event) {
         event.preventDefault();
-        console.log('[MFA_DEBUG] submit do form login interceptado');
         handleLoginSubmit();
     });
 
     btnLogin.addEventListener('click', function () {
-        console.log('[MFA_DEBUG] clique no botão Entrar');
         handleLoginSubmit();
     });
 
