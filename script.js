@@ -9,10 +9,12 @@
         MIN_PASSWORD_LENGTH: 8,
         EMAIL_REGEX: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
         CPF_REGEX: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
+        MFA_RESTORE_TTL_MS: 10 * 60 * 1000,
     };
 
     let loginAttempts = 0;
     let lockoutUntil = 0;
+    let isLoginSubmitting = false;
 
     const form = document.getElementById('login-form');
     const emailInput = document.getElementById('email');
@@ -32,6 +34,7 @@
     const backLoginLink = document.getElementById('back-login-link');
     const forgotForm = document.getElementById('forgot-form');
     const forgotEmailInput = document.getElementById('forgot-email');
+    const btnForgot = document.getElementById('btn-forgot');
     const mascotForgot = document.getElementById('mascot-forgot');
 
     const registerForm = document.getElementById('register-form');
@@ -43,6 +46,71 @@
     const passwordStrength = document.getElementById('password-strength');
     const passwordStrengthFill = document.getElementById('password-strength-fill');
     const passwordStrengthText = document.getElementById('password-strength-text');
+
+    const mfaModal = document.getElementById('mfa-modal');
+    const mfaForm = document.getElementById('mfa-form');
+    const mfaCodeInput = document.getElementById('mfa-code');
+    const mfaCodeError = document.getElementById('mfa-code-error');
+    const mfaCancelBtn = document.getElementById('mfa-cancel');
+    const mfaSubmitBtn = document.getElementById('mfa-submit');
+
+    const resetModal = document.getElementById('reset-modal');
+    const resetForm = document.getElementById('reset-form');
+    const resetEmailInput = document.getElementById('reset-email');
+    const resetCodeInput = document.getElementById('reset-code');
+    const resetPasswordInput = document.getElementById('reset-password');
+    const resetPasswordConfirmInput = document.getElementById('reset-password-confirm');
+    const resetCodeError = document.getElementById('reset-code-error');
+    const resetPasswordError = document.getElementById('reset-password-error');
+    const resetPasswordConfirmError = document.getElementById('reset-password-confirm-error');
+    const resetCancelBtn = document.getElementById('reset-cancel');
+    const resetSubmitBtn = document.getElementById('reset-submit');
+
+    const state = {
+        loginChallengeToken: '',
+        resetEmail: '',
+    };
+
+    const MFA_SESSION_KEY = 'midori.auth.mfa.challenge';
+
+    function saveMfaChallenge(challengeToken) {
+        try {
+            window.sessionStorage.setItem(MFA_SESSION_KEY, JSON.stringify({
+                challengeToken,
+                createdAt: Date.now(),
+            }));
+        } catch {
+        }
+    }
+
+    function clearMfaChallenge() {
+        try {
+            window.sessionStorage.removeItem(MFA_SESSION_KEY);
+        } catch {
+        }
+    }
+
+    function restoreMfaChallengeIfAny() {
+        try {
+            const raw = window.sessionStorage.getItem(MFA_SESSION_KEY);
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            const challengeToken = String(parsed?.challengeToken || '');
+            const createdAt = Number(parsed?.createdAt || 0);
+            if (!challengeToken || !createdAt) {
+                clearMfaChallenge();
+                return;
+            }
+            if (Date.now() - createdAt > CONFIG.MFA_RESTORE_TTL_MS) {
+                clearMfaChallenge();
+                return;
+            }
+            console.log('[MFA_DEBUG] restaurando desafio MFA após reload');
+            openMfaModal(challengeToken);
+        } catch {
+            clearMfaChallenge();
+        }
+    }
 
     function sanitize(str) {
         const div = document.createElement('div');
@@ -209,8 +277,59 @@
         }, 150);
     }
 
-    async function handleSubmit(e) {
-        e.preventDefault();
+    function openMfaModal(challengeToken) {
+        console.log('[MFA_DEBUG] openMfaModal chamado', {
+            hasToken: Boolean(challengeToken),
+            tokenLength: String(challengeToken || '').length,
+        });
+        state.loginChallengeToken = challengeToken;
+        saveMfaChallenge(challengeToken);
+        mfaCodeInput.value = '';
+        mfaCodeError.textContent = '';
+        mfaModal.classList.remove('hidden');
+        mfaModal.setAttribute('aria-hidden', 'false');
+        mfaCodeInput.focus();
+    }
+
+    function closeMfaModal() {
+        state.loginChallengeToken = '';
+        clearMfaChallenge();
+        mfaModal.classList.add('hidden');
+        mfaModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function openResetModal(email) {
+        state.resetEmail = email;
+        resetEmailInput.value = email;
+        resetCodeInput.value = '';
+        resetPasswordInput.value = '';
+        resetPasswordConfirmInput.value = '';
+        resetCodeError.textContent = '';
+        resetPasswordError.textContent = '';
+        resetPasswordConfirmError.textContent = '';
+        resetModal.classList.remove('hidden');
+        resetModal.style.display = 'flex';
+        resetModal.setAttribute('aria-hidden', 'false');
+        resetCodeInput.focus();
+    }
+
+    function closeResetModal() {
+        resetModal.classList.add('hidden');
+        resetModal.style.display = 'none';
+        resetModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function ensureForgotCardVisible() {
+        loginCard.classList.add('hidden');
+        registerCard.classList.add('hidden');
+        forgotCard.classList.remove('hidden');
+        forgotCard.classList.remove('fade-out');
+        showMascot(mascotForgot);
+    }
+
+    async function handleLoginSubmit() {
+        if (isLoginSubmitting) return;
+        console.log('[MFA_DEBUG] handleLoginSubmit iniciado');
 
         const lockoutMsg = isLockedOut();
         if (lockoutMsg) {
@@ -238,16 +357,29 @@
         }
         if (hasError) return;
 
+        isLoginSubmitting = true;
         setLoading(true);
 
         try {
-            await api.login(loginValue, password);
-            window.location.href = 'home.html';
+            console.log('[MFA_DEBUG] enviando /auth/login', {
+                loginValue,
+                passwordLength: String(password || '').length,
+            });
+            const response = await api.startLogin(loginValue, password);
+            console.log('[MFA_DEBUG] resposta /auth/login recebida', response);
+            if (!response?.requiresMfa || !response.challengeToken) {
+                console.warn('[MFA_DEBUG] resposta sem dados esperados de MFA', response);
+                throw new Error('Falha ao iniciar verificação de segurança.');
+            }
+            openMfaModal(response.challengeToken);
         } catch (error) {
+            console.error('[MFA_DEBUG] erro no login MFA', error);
             recordFailedAttempt();
             showError(emailInput, emailError, error.message || 'Email ou senha incorretos.');
         } finally {
             setLoading(false);
+            isLoginSubmitting = false;
+            console.log('[MFA_DEBUG] handleLoginSubmit finalizado');
         }
     }
 
@@ -275,7 +407,18 @@
         if (!err) clearError(this, passwordError);
     });
 
-    form.addEventListener('submit', handleSubmit);
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        console.log('[MFA_DEBUG] submit do form login interceptado');
+        handleLoginSubmit();
+    });
+
+    btnLogin.addEventListener('click', function () {
+        console.log('[MFA_DEBUG] clique no botão Entrar');
+        handleLoginSubmit();
+    });
+
+    restoreMfaChallengeIfAny();
 
     emailInput.addEventListener('paste', function () {
         setTimeout(() => {
@@ -307,9 +450,7 @@
         showMascot(mascotLogin);
     });
 
-    forgotForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
-
+    async function handleForgotPasswordRequest() {
         const errorSpan = document.getElementById('forgot-email-error');
         const email = sanitize(forgotEmailInput.value);
         const emailErr = validateEmail(email);
@@ -320,22 +461,116 @@
         }
 
         clearError(forgotEmailInput, errorSpan);
-
-        const btnForgot = document.getElementById('btn-forgot');
         btnForgot.disabled = true;
         btnForgot.textContent = 'Enviando...';
 
-        setTimeout(() => {
-            btnForgot.textContent = 'Link Enviado!';
-            btnForgot.style.backgroundColor = 'var(--green-light)';
-            btnForgot.style.color = 'var(--green-dark)';
-            setTimeout(() => {
-                btnForgot.disabled = false;
-                btnForgot.textContent = 'Enviar Link';
-                btnForgot.style.backgroundColor = '';
-                btnForgot.style.color = '';
-            }, 2800);
-        }, 900);
+        try {
+            await api.requestPasswordReset(email.trim().toLowerCase());
+            ensureForgotCardVisible();
+            clearError(forgotEmailInput, errorSpan);
+            errorSpan.textContent = 'Se o email existir, enviamos um link de recuperação.';
+            btnForgot.textContent = 'Link enviado';
+        } catch (error) {
+            showError(forgotEmailInput, errorSpan, error.message || 'Erro ao enviar link.');
+            btnForgot.textContent = 'Enviar Link';
+        } finally {
+            btnForgot.disabled = false;
+        }
+    }
+
+    forgotForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        handleForgotPasswordRequest();
+    });
+
+    btnForgot.addEventListener('click', function () {
+        handleForgotPasswordRequest();
+    });
+
+    forgotEmailInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            handleForgotPasswordRequest();
+        }
+    });
+
+    mfaCancelBtn.addEventListener('click', closeMfaModal);
+
+    mfaForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const cleanCode = String(mfaCodeInput.value || '').trim();
+        if (!/^\d{6}$/.test(cleanCode)) {
+            mfaCodeError.textContent = 'Informe um código válido de 6 dígitos.';
+            return;
+        }
+
+        mfaCodeError.textContent = '';
+        mfaSubmitBtn.disabled = true;
+        mfaSubmitBtn.textContent = 'Validando...';
+
+        try {
+            await api.verifyLoginCode(state.loginChallengeToken, cleanCode);
+            clearMfaChallenge();
+            window.location.href = 'home.html';
+        } catch (error) {
+            mfaCodeError.textContent = error.message || 'Código inválido ou expirado.';
+        } finally {
+            mfaSubmitBtn.disabled = false;
+            mfaSubmitBtn.textContent = 'Confirmar';
+        }
+    });
+
+    resetCancelBtn.addEventListener('click', closeResetModal);
+
+    resetForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const code = String(resetCodeInput.value || '').trim();
+        const newPassword = resetPasswordInput.value || '';
+        const confirmPassword = resetPasswordConfirmInput.value || '';
+
+        resetCodeError.textContent = '';
+        resetPasswordError.textContent = '';
+        resetPasswordConfirmError.textContent = '';
+
+        let hasError = false;
+
+        if (!/^\d{6}$/.test(code)) {
+            resetCodeError.textContent = 'Código inválido.';
+            hasError = true;
+        }
+
+        const passwordMsg = validatePassword(newPassword);
+        if (passwordMsg) {
+            resetPasswordError.textContent = passwordMsg;
+            hasError = true;
+        }
+
+        if (newPassword !== confirmPassword) {
+            resetPasswordConfirmError.textContent = 'As senhas não conferem.';
+            hasError = true;
+        }
+
+        if (hasError) return;
+
+        resetSubmitBtn.disabled = true;
+        resetSubmitBtn.textContent = 'Redefinindo...';
+
+        try {
+            await api.resetPassword({
+                email: state.resetEmail,
+                code,
+                newPassword,
+            });
+
+            closeResetModal();
+            switchCard(forgotCard, loginCard);
+            showMascot(mascotLogin);
+        } catch (error) {
+            resetCodeError.textContent = error.message || 'Erro ao redefinir senha.';
+        } finally {
+            resetSubmitBtn.disabled = false;
+            resetSubmitBtn.textContent = 'Redefinir senha';
+        }
     });
 
     regCpfInput.addEventListener('input', function () {

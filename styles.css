@@ -376,6 +376,58 @@ a {
     cursor: not-allowed;
 }
 
+.btn-ghost {
+    height: 3.6vw;
+    border: 0.1vw solid var(--green-dark);
+    border-radius: 0.83vw;
+    background: transparent;
+    color: var(--green-dark);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.95vw;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.auth-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+}
+
+.auth-modal.hidden {
+    display: none;
+}
+
+.auth-modal__card {
+    width: min(92vw, 34vw);
+    background: var(--white);
+    border-radius: 1.2vw;
+    padding: 1.8vw;
+    box-shadow: 0 0.28vw 2.1vw rgba(0, 0, 0, 0.18);
+}
+
+.auth-modal__card h2 {
+    font-size: 1.3vw;
+    margin-bottom: 0.3vw;
+}
+
+.auth-modal__card p {
+    font-size: 0.85vw;
+    color: var(--text-muted);
+    margin-bottom: 1vw;
+}
+
+.auth-modal__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7vw;
+    margin-top: 0.6vw;
+}
+
 /* ========== FOOTER BACKGROUND ========== */
 .footer-bg {
     position: absolute;

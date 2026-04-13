@@ -135,13 +135,25 @@
         return payload;
     }
 
-    async function login(loginValue, password) {
+    async function startLogin(loginValue, password) {
         const data = await request('/auth/login', {
             method: 'POST',
             body: JSON.stringify({ login: loginValue, password }),
         });
+        return data;
+    }
+
+    async function verifyLoginCode(challengeToken, code) {
+        const data = await request('/auth/login/verify', {
+            method: 'POST',
+            body: JSON.stringify({ challengeToken, code }),
+        });
         setSession(null, data.user);
         return data;
+    }
+
+    async function login(loginValue, password) {
+        return startLogin(loginValue, password);
     }
 
     async function register({ email, username, displayName, password, cpf, phone }) {
@@ -155,6 +167,27 @@
 
     async function getMe() {
         return request('/auth/me');
+    }
+
+    async function requestPasswordReset(email) {
+        return request('/auth/password/forgot', {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+        });
+    }
+
+    async function resetPassword({ email, code, newPassword }) {
+        return request('/auth/password/reset', {
+            method: 'POST',
+            body: JSON.stringify({ email, code, newPassword }),
+        });
+    }
+
+    async function resetPasswordWithToken({ token, newPassword }) {
+        return request('/auth/password/reset-link', {
+            method: 'POST',
+            body: JSON.stringify({ token, newPassword }),
+        });
     }
 
     async function getMyProfile() {
@@ -348,8 +381,13 @@
         setSession,
         clearSession,
         login,
+        startLogin,
+        verifyLoginCode,
         register,
         getMe,
+        requestPasswordReset,
+        resetPassword,
+        resetPasswordWithToken,
         getMyProfile,
         getPublicProfile,
         updateMyProfile,

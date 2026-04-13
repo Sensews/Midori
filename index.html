@@ -46,7 +46,7 @@
                     </div>
                 </div>
 
-                <form id="login-form" novalidate>
+                <form id="login-form" novalidate onsubmit="return false;">
                     <div class="form-group">
                         <label for="email">Entre o seu Email</label>
                         <input 
@@ -77,7 +77,7 @@
                         <a href="#" id="forgot-link" class="form-link">Esqueci a Senha</a>
                     </div>
 
-                    <button type="submit" class="btn-login" id="btn-login">
+                    <button type="button" class="btn-login" id="btn-login">
                         Entrar
                     </button>
                 </form>
@@ -112,7 +112,7 @@
                         <span class="error-message" id="forgot-email-error"></span>
                     </div>
 
-                    <button type="submit" class="btn-login" id="btn-forgot">
+                    <button type="button" class="btn-login" id="btn-forgot">
                         Enviar Link
                     </button>
                 </form>
@@ -214,6 +214,56 @@
     <!-- Footer SVG -->
     <div class="footer-bg">
         <img src="Assets/Footer.svg" alt="" aria-hidden="true">
+    </div>
+
+    <div class="auth-modal hidden" id="mfa-modal" aria-hidden="true">
+        <div class="auth-modal__card">
+            <h2>Verificação por Email</h2>
+            <p>Enviamos um código de 6 dígitos para seu email.</p>
+            <form id="mfa-form" novalidate>
+                <div class="form-group">
+                    <label for="mfa-code">Código</label>
+                    <input id="mfa-code" name="mfaCode" type="text" inputmode="numeric" maxlength="6" placeholder="000000" required>
+                    <span class="error-message" id="mfa-code-error"></span>
+                </div>
+                <div class="auth-modal__actions">
+                    <button type="button" class="btn-ghost" id="mfa-cancel">Cancelar</button>
+                    <button type="submit" class="btn-login" id="mfa-submit">Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="auth-modal hidden" id="reset-modal" aria-hidden="true">
+        <div class="auth-modal__card">
+            <h2>Redefinir Senha</h2>
+            <p>Digite o código recebido por email e escolha sua nova senha.</p>
+            <form id="reset-form" novalidate>
+                <div class="form-group">
+                    <label for="reset-email">Email</label>
+                    <input id="reset-email" name="resetEmail" type="email" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="reset-code">Código</label>
+                    <input id="reset-code" name="resetCode" type="text" inputmode="numeric" maxlength="6" placeholder="000000" required>
+                    <span class="error-message" id="reset-code-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="reset-password">Nova senha</label>
+                    <input id="reset-password" name="resetPassword" type="password" placeholder="Nova senha" required>
+                    <span class="error-message" id="reset-password-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="reset-password-confirm">Confirmar nova senha</label>
+                    <input id="reset-password-confirm" name="resetPasswordConfirm" type="password" placeholder="Confirmar nova senha" required>
+                    <span class="error-message" id="reset-password-confirm-error"></span>
+                </div>
+                <div class="auth-modal__actions">
+                    <button type="button" class="btn-ghost" id="reset-cancel">Cancelar</button>
+                    <button type="submit" class="btn-login" id="reset-submit">Redefinir senha</button>
+                </div>
+            </form>
+        </div>
     </div>
     <script src="api-client.js"></script>
     <script src="script.js"></script>
