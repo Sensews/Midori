@@ -18,6 +18,13 @@
     const cardLikes = document.getElementById('card-likes');
     const cardComments = document.getElementById('card-comments');
     const swipeFeedback = document.getElementById('swipe-feedback');
+    const swipeHud = document.getElementById('swipe-hud');
+    const swipeTip = document.getElementById('swipe-tip');
+    const swipeActionSkip = document.getElementById('swipe-action-skip');
+    const swipeActionLike = document.getElementById('swipe-action-like');
+    const swipeChipSkip = document.getElementById('swipe-chip-skip');
+    const swipeChipLike = document.getElementById('swipe-chip-like');
+    const swipeHudMascot = document.getElementById('swipe-hud-mascot');
     const reloadPostsBtn = document.getElementById('home-reload-posts');
 
     const modal = document.getElementById('post-modal-overlay');
@@ -44,6 +51,13 @@
         cardLikes,
         cardComments,
         swipeFeedback,
+        swipeHud,
+        swipeTip,
+        swipeActionSkip,
+        swipeActionLike,
+        swipeChipSkip,
+        swipeChipLike,
+        swipeHudMascot,
         reloadPostsBtn,
         modal,
         modalClose,
@@ -178,11 +192,15 @@
         if (!post) {
             card.hidden = true;
             emptyState.hidden = false;
+            swipeHud.hidden = true;
+            swipeTip.hidden = true;
             return;
         }
 
         card.hidden = false;
         emptyState.hidden = true;
+        swipeHud.hidden = false;
+        swipeTip.hidden = false;
 
         cardImage.src = post.imageUrl || 'Assets/Mido.svg';
         cardType.textContent = post.type === 'EXHIBITION' ? 'Exposição' : 'Doação';
@@ -197,6 +215,13 @@
         card.style.opacity = '1';
         swipeFeedback.style.opacity = '0';
         swipeFeedback.classList.remove('swipe-card__feedback--skip', 'swipe-card__feedback--like');
+        swipeActionSkip.style.opacity = '0';
+        swipeActionSkip.style.transform = 'scale(0.92)';
+        swipeActionLike.style.opacity = '0';
+        swipeActionLike.style.transform = 'scale(0.92)';
+        swipeChipSkip.classList.remove('is-active');
+        swipeChipLike.classList.remove('is-active');
+        swipeHudMascot.style.transform = '';
     }
 
     function refreshCurrentCardMeta() {
@@ -257,14 +282,28 @@
         card.style.opacity = String(opacity);
 
         const intensity = Math.min(1, Math.abs(deltaX) / 220);
+        const thresholdReady = Math.abs(deltaX) >= SWIPE_THRESHOLD;
         swipeFeedback.style.opacity = String(intensity);
+        swipeHudMascot.style.transform = `translateX(${deltaX * 0.03}px) rotate(${deltaX * 0.035}deg)`;
 
         if (deltaX < 0) {
             swipeFeedback.classList.add('swipe-card__feedback--skip');
             swipeFeedback.classList.remove('swipe-card__feedback--like');
+            swipeActionSkip.style.opacity = String(0.2 + intensity * 0.8);
+            swipeActionSkip.style.transform = `scale(${0.92 + intensity * 0.08})`;
+            swipeActionLike.style.opacity = '0';
+            swipeActionLike.style.transform = 'scale(0.92)';
+            swipeChipSkip.classList.toggle('is-active', thresholdReady);
+            swipeChipLike.classList.remove('is-active');
         } else {
             swipeFeedback.classList.add('swipe-card__feedback--like');
             swipeFeedback.classList.remove('swipe-card__feedback--skip');
+            swipeActionLike.style.opacity = String(0.2 + intensity * 0.8);
+            swipeActionLike.style.transform = `scale(${0.92 + intensity * 0.08})`;
+            swipeActionSkip.style.opacity = '0';
+            swipeActionSkip.style.transform = 'scale(0.92)';
+            swipeChipLike.classList.toggle('is-active', thresholdReady);
+            swipeChipSkip.classList.remove('is-active');
         }
     }
 
@@ -274,6 +313,13 @@
         card.style.opacity = '1';
         swipeFeedback.style.opacity = '0';
         swipeFeedback.classList.remove('swipe-card__feedback--skip', 'swipe-card__feedback--like');
+        swipeActionSkip.style.opacity = '0';
+        swipeActionSkip.style.transform = 'scale(0.92)';
+        swipeActionLike.style.opacity = '0';
+        swipeActionLike.style.transform = 'scale(0.92)';
+        swipeChipSkip.classList.remove('is-active');
+        swipeChipLike.classList.remove('is-active');
+        swipeHudMascot.style.transform = '';
         window.setTimeout(() => {
             card.style.transition = '';
         }, 340);
@@ -290,6 +336,13 @@
         swipeFeedback.classList.toggle('swipe-card__feedback--like', toRight);
         swipeFeedback.classList.toggle('swipe-card__feedback--skip', !toRight);
         swipeFeedback.style.opacity = '0.9';
+        swipeActionSkip.style.opacity = toRight ? '0' : '1';
+        swipeActionSkip.style.transform = toRight ? 'scale(0.92)' : 'scale(1)';
+        swipeActionLike.style.opacity = toRight ? '1' : '0';
+        swipeActionLike.style.transform = toRight ? 'scale(1)' : 'scale(0.92)';
+        swipeChipLike.classList.toggle('is-active', toRight);
+        swipeChipSkip.classList.toggle('is-active', !toRight);
+        swipeHudMascot.style.transform = toRight ? 'translateX(6px) rotate(8deg)' : 'translateX(-6px) rotate(-8deg)';
 
         card.style.transition = 'transform 0.42s ease, opacity 0.42s ease';
         card.style.transform = `translateX(${targetX}px) rotate(${targetRotate}deg)`;
@@ -302,6 +355,13 @@
         card.style.opacity = '0';
         swipeFeedback.style.opacity = '0';
         swipeFeedback.classList.remove('swipe-card__feedback--skip', 'swipe-card__feedback--like');
+        swipeActionSkip.style.opacity = '0';
+        swipeActionSkip.style.transform = 'scale(0.92)';
+        swipeActionLike.style.opacity = '0';
+        swipeActionLike.style.transform = 'scale(0.92)';
+        swipeChipSkip.classList.remove('is-active');
+        swipeChipLike.classList.remove('is-active');
+        swipeHudMascot.style.transform = '';
 
         if (toRight) {
             await swipeRight();
