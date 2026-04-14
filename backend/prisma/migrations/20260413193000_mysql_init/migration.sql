@@ -9,6 +9,10 @@ CREATE TABLE `User` (
     `passwordHash` VARCHAR(191) NOT NULL,
     `refreshTokenHash` VARCHAR(191) NULL,
     `refreshTokenExpiresAt` DATETIME(3) NULL,
+    `failedLoginAttempts` INTEGER NOT NULL DEFAULT 0,
+    `lockoutUntil` DATETIME(3) NULL,
+    `lastPasswordResetAt` DATETIME(3) NULL,
+    `mfaChangeBlockedUntil` DATETIME(3) NULL,
     `role` VARCHAR(191) NOT NULL DEFAULT 'USER',
     `bio` VARCHAR(191) NULL,
     `avatarUrl` VARCHAR(191) NULL,
@@ -18,6 +22,61 @@ CREATE TABLE `User` (
     UNIQUE INDEX `User_email_key`(`email`),
     UNIQUE INDEX `User_username_key`(`username`),
     UNIQUE INDEX `User_cpf_key`(`cpf`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `AuthSession` (
+    `id` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `deviceIdHash` VARCHAR(191) NOT NULL,
+    `ipHash` VARCHAR(191) NULL,
+    `userAgent` VARCHAR(191) NULL,
+    `refreshTokenHash` VARCHAR(191) NOT NULL,
+    `expiresAt` DATETIME(3) NOT NULL,
+    `revokedAt` DATETIME(3) NULL,
+    `revokeReason` VARCHAR(191) NULL,
+    `isPrivileged` BOOLEAN NOT NULL DEFAULT false,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `lastSeenAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `AuthSession_userId_revokedAt_createdAt_idx`(`userId`, `revokedAt`, `createdAt`),
+    INDEX `AuthSession_deviceIdHash_createdAt_idx`(`deviceIdHash`, `createdAt`),
+    INDEX `AuthSession_ipHash_createdAt_idx`(`ipHash`, `createdAt`),
+    INDEX `AuthSession_expiresAt_idx`(`expiresAt`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `BackupCode` (
+    `id` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `codeHash` VARCHAR(191) NOT NULL,
+    `expiresAt` DATETIME(3) NOT NULL,
+    `consumedAt` DATETIME(3) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `BackupCode_userId_consumedAt_createdAt_idx`(`userId`, `consumedAt`, `createdAt`),
+    INDEX `BackupCode_expiresAt_idx`(`expiresAt`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `AuthEvent` (
+    `id` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NULL,
+    `loginValue` VARCHAR(191) NULL,
+    `eventType` VARCHAR(191) NOT NULL,
+    `ipHash` VARCHAR(191) NULL,
+    `deviceIdHash` VARCHAR(191) NULL,
+    `riskLevel` VARCHAR(191) NULL,
+    `metadata` JSON NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `AuthEvent_userId_createdAt_idx`(`userId`, `createdAt`),
+    INDEX `AuthEvent_eventType_createdAt_idx`(`eventType`, `createdAt`),
+    INDEX `AuthEvent_ipHash_createdAt_idx`(`ipHash`, `createdAt`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -163,6 +222,15 @@ CREATE TABLE `ModerationAction` (
     INDEX `ModerationAction_postId_idx`(`postId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `AuthSession` ADD CONSTRAINT `AuthSession_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `BackupCode` ADD CONSTRAINT `BackupCode_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `AuthEvent` ADD CONSTRAINT `AuthEvent_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `AuthCode` ADD CONSTRAINT `AuthCode_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

@@ -376,6 +376,12 @@
 
         try {
             const response = await api.startLogin(loginValue, password);
+            if (response?.requiresMfa === false && response?.user) {
+                api.setSession(null, response.user);
+                window.location.href = 'home.html';
+                return;
+            }
+
             if (!response?.requiresMfa || !response.challengeToken) {
                 throw new Error('Falha ao iniciar verificação de segurança.');
             }

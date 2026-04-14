@@ -52,8 +52,19 @@
 
     <main class="main-content home-main">
         <section class="swipe-stage" aria-label="Feed principal">
+            <div id="swipe-hud" class="swipe-hud" aria-hidden="true">
+                <span class="swipe-hud__chip swipe-hud__chip--skip" id="swipe-chip-skip">&larr; passar</span>
+                <img class="swipe-hud__mascot" id="swipe-hud-mascot" src="Assets/Mido.svg" alt="">
+                <span class="swipe-hud__chip swipe-hud__chip--like" id="swipe-chip-like">curtir &rarr;</span>
+            </div>
             <article class="swipe-card" id="swipe-card" role="button" tabindex="0" aria-label="Abrir detalhes da postagem">
                 <div id="swipe-feedback" class="swipe-card__feedback" aria-hidden="true"></div>
+                <div class="swipe-card__action swipe-card__action--skip" id="swipe-action-skip" aria-hidden="true">
+                    <span>✕ Passar</span>
+                </div>
+                <div class="swipe-card__action swipe-card__action--like" id="swipe-action-like" aria-hidden="true">
+                    <span>❤ Curtir</span>
+                </div>
                 <div class="swipe-card__imageWrap">
                     <img id="card-image" class="swipe-card__image" src="" alt="Imagem da postagem" draggable="false">
                 </div>
@@ -70,6 +81,7 @@
                     </div>
                 </div>
             </article>
+            <p id="swipe-tip" class="swipe-tip">Use &larr; e &rarr; também.</p>
             <div id="home-empty" class="home-empty" hidden>
                 <img src="Assets/Mido.svg" alt="Mido dizendo que não há posts" class="home-empty__img">
                 <p class="home-empty__title">Sem posts por enquanto 🌿</p>
