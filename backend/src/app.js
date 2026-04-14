@@ -32,9 +32,10 @@ const globalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 80,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.method === 'GET' && req.path === '/me',
   message: { error: 'Muitas tentativas de autenticação. Aguarde e tente novamente.' },
 });
 

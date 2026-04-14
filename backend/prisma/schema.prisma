@@ -17,6 +17,10 @@ model User {
   passwordHash String
   refreshTokenHash String?
   refreshTokenExpiresAt DateTime?
+  failedLoginAttempts Int               @default(0)
+  lockoutUntil DateTime?
+  lastPasswordResetAt DateTime?
+  mfaChangeBlockedUntil DateTime?
   role         String                    @default("USER")
   bio          String?
   avatarUrl    String?
@@ -35,6 +39,64 @@ model User {
   reportsReceived Report[]                @relation("ReportsReceived")
   reportsReviewed Report[]                @relation("ReportsReviewed")
   authCodes AuthCode[]
+  authSessions AuthSession[]
+  backupCodes BackupCode[]
+  authEvents AuthEvent[]
+}
+
+model AuthSession {
+  id             String   @id @default(cuid())
+  userId         String
+  deviceIdHash   String
+  ipHash         String?
+  userAgent      String?
+  refreshTokenHash String
+  expiresAt      DateTime
+  revokedAt      DateTime?
+  revokeReason   String?
+  isPrivileged   Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  lastSeenAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt, createdAt])
+  @@index([deviceIdHash, createdAt])
+  @@index([ipHash, createdAt])
+  @@index([expiresAt])
+}
+
+model BackupCode {
+  id         String   @id @default(cuid())
+  userId     String
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, consumedAt, createdAt])
+  @@index([expiresAt])
+}
+
+model AuthEvent {
+  id         String   @id @default(cuid())
+  userId     String?
+  loginValue String?
+  eventType  String
+  ipHash     String?
+  deviceIdHash String?
+  riskLevel  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([eventType, createdAt])
+  @@index([ipHash, createdAt])
 }
 
 model AuthCode {

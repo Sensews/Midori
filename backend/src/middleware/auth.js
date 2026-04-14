@@ -47,6 +47,7 @@ async function authenticate(req, res, next) {
     req.user = {
       userId: user.id,
       role: user.role,
+      sessionId: payload.sessionId || null,
     };
     return next();
   } catch (error) {
@@ -82,6 +83,7 @@ async function authenticateOptional(req, _res, next) {
     req.user = {
       userId: user.id,
       role: user.role,
+      sessionId: payload.sessionId || null,
     };
   } catch {
     req.user = null;

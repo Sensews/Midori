@@ -44,6 +44,7 @@
     const btnRemovePhoto = document.getElementById('settings-remove-photo');
     const photoPreview = document.getElementById('settings-photo-preview');
     const btnDelete = document.getElementById('settings-delete');
+    const btnLogoutAll = document.getElementById('settings-logout-all');
 
     const donationGrid = document.querySelector('.donation-grid');
     const expoGrid = document.querySelector('.expo-grid');
@@ -745,6 +746,20 @@
         if (!ok) return;
         api.clearSession();
         window.location.href = 'index.html';
+    });
+
+    btnLogoutAll?.addEventListener('click', async function () {
+        const ok = window.confirm('Deseja encerrar todas as sessões da conta?');
+        if (!ok) return;
+
+        try {
+            await api.revokeAllAuthSessions({ keepCurrent: false });
+            api.clearSession();
+            window.alert('Todas as sessões foram encerradas. Faça login novamente.');
+            window.location.href = 'index.html';
+        } catch (error) {
+            window.alert(error.message || 'Erro ao encerrar sessões.');
+        }
     });
 
     form?.addEventListener('submit', async function (e) {

@@ -4,7 +4,23 @@
     const TOKEN_KEY = 'midori.auth.token';
     const USER_KEY = 'midori.auth.user';
     const API_BASE_KEY = 'midori.api.base';
+    const DEVICE_KEY = 'midori.auth.device';
     const SESSION_MARKER = 'cookie-session';
+
+    function generateDeviceId() {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        return `device-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function getDeviceId() {
+        const current = window.localStorage.getItem(DEVICE_KEY);
+        if (current) return current;
+        const created = generateDeviceId();
+        window.localStorage.setItem(DEVICE_KEY, created);
+        return created;
+    }
 
     function getDefaultBaseUrl() {
         if (window.location.protocol === 'file:') {
@@ -68,6 +84,7 @@
     async function rawRequest(path, options = {}) {
         const url = buildApiUrl(path);
         const headers = new Headers(options.headers || {});
+        headers.set('X-Device-Id', getDeviceId());
 
         if (!options.isFormData && !headers.has('Content-Type')) {
             headers.set('Content-Type', 'application/json');
@@ -188,6 +205,34 @@
             method: 'POST',
             body: JSON.stringify({ token, newPassword }),
         });
+    }
+
+    async function listAuthSessions() {
+        return request('/auth/sessions');
+    }
+
+    async function revokeAuthSession(sessionId) {
+        return request(`/auth/sessions/${encodeURIComponent(sessionId)}`, {
+            method: 'DELETE',
+        });
+    }
+
+    async function revokeAllAuthSessions({ keepCurrent } = {}) {
+        return request('/auth/sessions/revoke-all', {
+            method: 'POST',
+            body: JSON.stringify({ keepCurrent: Boolean(keepCurrent) }),
+        });
+    }
+
+    async function regenerateBackupCodes() {
+        return request('/auth/mfa/backup-codes/regenerate', {
+            method: 'POST',
+            body: JSON.stringify({}),
+        });
+    }
+
+    async function listAuthEvents(limit = 50) {
+        return request(`/auth/events?limit=${encodeURIComponent(limit)}`);
     }
 
     async function getMyProfile() {
@@ -374,10 +419,12 @@
     window.MidoriApi = {
         TOKEN_KEY,
         USER_KEY,
+        DEVICE_KEY,
         getApiBaseUrl,
         setApiBaseUrl,
         getToken,
         getUser,
+        getDeviceId,
         setSession,
         clearSession,
         login,
@@ -388,6 +435,11 @@
         requestPasswordReset,
         resetPassword,
         resetPasswordWithToken,
+        listAuthSessions,
+        revokeAuthSession,
+        revokeAllAuthSessions,
+        regenerateBackupCodes,
+        listAuthEvents,
         getMyProfile,
         getPublicProfile,
         updateMyProfile,

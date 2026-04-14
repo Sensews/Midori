@@ -133,7 +133,30 @@ async function sendPasswordResetLinkEmail({ to, subject, heading, resetLink, exp
   });
 }
 
+async function sendSecurityNoticeEmail({ to, subject, heading, message }) {
+  const { config, transporter } = getTransporter();
+
+  const html = renderEmailLayout({
+    preheader: heading,
+    title: heading,
+    subtitle: 'Aviso de segurança da sua conta Midori.',
+    bodyHtml: `
+      <p style="margin:0;font-size:15px;line-height:1.6;color:#2D2D2D;">${String(message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+    `,
+    footerHtml: 'Se você não reconhece esta ação, altere sua senha e contate a equipe imediatamente.',
+  });
+
+  await transporter.sendMail({
+    from: config.from,
+    to,
+    subject,
+    text: `${heading}\n\n${message}`,
+    html,
+  });
+}
+
 module.exports = {
   sendSecurityCodeEmail,
   sendPasswordResetLinkEmail,
+  sendSecurityNoticeEmail,
 };
