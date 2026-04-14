@@ -1,5 +1,45 @@
 const nodemailer = require('nodemailer');
 
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getFrontendBaseUrl() {
+  const explicit = String(process.env.FRONTEND_BASE_URL || '').trim();
+  if (explicit) return explicit.replace(/\/$/, '');
+  return '';
+}
+
+function getAssetUrl(baseUrl, fileName) {
+  if (!baseUrl) return '';
+  return `${baseUrl}/Assets/${encodeURIComponent(fileName)}`;
+}
+
+function getEmailBrandAssets() {
+  return {
+    logo:
+      String(process.env.EMAIL_ASSET_LOGO_URL || '').trim() ||
+      'https://res.cloudinary.com/dtdfxrpsj/image/upload/v1776203667/logo_lbbxgf.svg',
+    mascotDefault:
+      String(process.env.EMAIL_ASSET_MASCOT_DEFAULT_URL || '').trim() ||
+      'https://res.cloudinary.com/dtdfxrpsj/image/upload/v1776203669/Mido_jgov9w.svg',
+    mascotComputer:
+      String(process.env.EMAIL_ASSET_MASCOT_COMPUTER_URL || '').trim() ||
+      'https://res.cloudinary.com/dtdfxrpsj/image/upload/v1776203668/Mido_Computer_jhfxo3.svg',
+    mascotCellphone:
+      String(process.env.EMAIL_ASSET_MASCOT_CELLPHONE_URL || '').trim() ||
+      'https://res.cloudinary.com/dtdfxrpsj/image/upload/v1776203668/Mido_Celular_xlgbgw.svg',
+    mascotCurious:
+      String(process.env.EMAIL_ASSET_MASCOT_CURIOUS_URL || '').trim() ||
+      'https://res.cloudinary.com/dtdfxrpsj/image/upload/v1776203669/Mido_Curioso_r1e7yh.svg',
+  };
+}
+
 function getMailerConfig() {
   const host = String(process.env.SMTP_HOST || '').trim();
   const port = Number(process.env.SMTP_PORT || 0);
@@ -40,36 +80,80 @@ function getTransporter() {
   };
 }
 
-function renderEmailLayout({ preheader, title, subtitle, bodyHtml, footerHtml }) {
+function renderEmailLayout({ preheader, title, subtitle, bodyHtml, footerHtml, mascotName = 'Mido.svg' }) {
+  const baseUrl = getFrontendBaseUrl();
+  const brandAssets = getEmailBrandAssets();
+  const logoUrl = brandAssets.logo || getAssetUrl(baseUrl, 'logo.svg');
+  const headerUrl = getAssetUrl(baseUrl, 'Header.svg');
+  const footerUrl = getAssetUrl(baseUrl, 'Footer.svg');
+  const mascotByName = {
+    'Mido.svg': brandAssets.mascotDefault,
+    'Mido Computer.svg': brandAssets.mascotComputer,
+    'Mido Celular.svg': brandAssets.mascotCellphone,
+    'Mido Curioso.svg': brandAssets.mascotCurious,
+  };
+  const mascotUrl = mascotByName[mascotName] || getAssetUrl(baseUrl, mascotName) || brandAssets.mascotDefault;
+
+  const safePreheader = escapeHtml(preheader);
+  const safeTitle = escapeHtml(title);
+  const safeSubtitle = escapeHtml(subtitle);
+
   return `
-    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${preheader}</div>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+    </style>
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${safePreheader}</div>
     <div style="margin:0;padding:0;background:#ECECEC;">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#ECECEC;padding:24px 12px;font-family:Arial,'Poppins',sans-serif;color:#2D2D2D;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#ECECEC;padding:20px 12px;font-family:'Poppins','Segoe UI',Arial,sans-serif;color:#2D2D2D;">
         <tr>
           <td align="center">
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#F3F5F3;border-radius:16px;overflow:hidden;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#F3F5F3;border-radius:16px;overflow:hidden;border:1px solid rgba(67,95,23,0.18);">
               <tr>
-                <td style="padding:0;height:10px;background:#B5FF3F;"></td>
-              </tr>
-              <tr>
-                <td style="padding:24px 24px 6px 24px;">
-                  <div style="font-size:28px;font-weight:700;line-height:1;color:#435F17;">Midori</div>
+                <td style="padding:0;line-height:0;">
+                  ${headerUrl
+                    ? `<img src="${headerUrl}" alt="" style="display:block;width:100%;height:auto;max-height:140px;object-fit:cover;" />`
+                    : '<div style="height:10px;background:#B5FF3F;"></div>'}
                 </td>
               </tr>
               <tr>
-                <td style="padding:8px 24px 0 24px;">
-                  <h1 style="margin:0;font-size:28px;line-height:1.2;color:#2D2D2D;">${title}</h1>
-                  <p style="margin:10px 0 0 0;font-size:15px;line-height:1.5;color:#6B6B6B;">${subtitle}</p>
+                <td style="padding:18px 24px 6px 24px;">
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                    <tr>
+                      <td valign="middle" align="left">
+                        ${logoUrl
+                          ? `<img src="${logoUrl}" alt="Midori" style="display:block;width:190px;height:auto;" />`
+                          : '<div style="font-size:34px;font-weight:700;line-height:1;color:#435F17;">Midori</div>'}
+                      </td>
+                      <td valign="middle" align="right" style="width:128px;">
+                        ${mascotUrl
+                          ? `<img src="${mascotUrl}" alt="Mascote Midori" style="display:block;width:112px;height:auto;margin-left:auto;" />`
+                          : ''}
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
               <tr>
-                <td style="padding:18px 24px 8px 24px;">${bodyHtml}</td>
+                <td style="padding:0 24px 0 24px;">
+                  <h1 style="margin:0;font-size:52px;line-height:1.05;color:#2D2D2D;font-weight:800;">${safeTitle}</h1>
+                  <p style="margin:10px 0 0 0;font-size:15px;line-height:1.5;color:#6B6B6B;font-weight:500;">${safeSubtitle}</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:18px 24px 8px 24px;font-family:'Poppins','Segoe UI',Arial,sans-serif;">${bodyHtml}</td>
               </tr>
               <tr>
                 <td style="padding:0 24px 24px 24px;">
                   <div style="font-size:13px;line-height:1.6;color:#6B6B6B;border-top:1px solid #E0E0E0;padding-top:14px;">
                     ${footerHtml}
                   </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:0;line-height:0;">
+                  ${footerUrl
+                    ? `<img src="${footerUrl}" alt="" style="display:block;width:100%;height:auto;max-height:120px;object-fit:cover;" />`
+                    : '<div style="height:8px;background:#435F17;"></div>'}
                 </td>
               </tr>
             </table>
@@ -87,10 +171,11 @@ async function sendSecurityCodeEmail({ to, subject, heading, code, expiresInMinu
     preheader: `Seu código Midori expira em ${expiresInMinutes} minutos.`,
     title: heading,
     subtitle: 'Use este código para concluir sua autenticação.',
+    mascotName: 'Mido Celular.svg',
     bodyHtml: `
       <p style="margin:0 0 10px 0;font-size:15px;color:#2D2D2D;">Seu código de verificação:</p>
       <div style="display:inline-block;background:#FFFFFF;border:1px solid #E0E0E0;border-radius:12px;padding:14px 18px;font-size:34px;letter-spacing:10px;font-weight:700;color:#435F17;">
-        ${code}
+        ${escapeHtml(code)}
       </div>
       <p style="margin:14px 0 0 0;font-size:14px;color:#6B6B6B;">Esse código expira em <strong style="color:#2D2D2D;">${expiresInMinutes} minutos</strong>.</p>
     `,
@@ -113,6 +198,7 @@ async function sendPasswordResetLinkEmail({ to, subject, heading, resetLink, exp
     preheader: `Link de redefinição Midori válido por ${expiresInMinutes} minutos.`,
     title: heading,
     subtitle: 'Recebemos uma solicitação para alterar sua senha.',
+    mascotName: 'Mido Computer.svg',
     bodyHtml: `
       <p style="margin:0 0 14px 0;font-size:15px;color:#2D2D2D;">Clique no botão abaixo para criar uma nova senha:</p>
       <p style="margin:0 0 10px 0;">
@@ -140,8 +226,9 @@ async function sendSecurityNoticeEmail({ to, subject, heading, message }) {
     preheader: heading,
     title: heading,
     subtitle: 'Aviso de segurança da sua conta Midori.',
+    mascotName: 'Mido Curioso.svg',
     bodyHtml: `
-      <p style="margin:0;font-size:15px;line-height:1.6;color:#2D2D2D;">${String(message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+      <p style="margin:0;font-size:15px;line-height:1.6;color:#2D2D2D;">${escapeHtml(message)}</p>
     `,
     footerHtml: 'Se você não reconhece esta ação, altere sua senha e contate a equipe imediatamente.',
   });
