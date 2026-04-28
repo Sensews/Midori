@@ -187,7 +187,6 @@ router.post('/requests/:requestId/respond', async (req, res) => {
   }
 
   const directConversation = await findDirectConversation(request.requesterId, request.recipientId);
-  const intro = request.introMessage || `Olá! Vim através da sua postagem: ${request.post.title}`;
 
   let conversationId = directConversation?.id || null;
 
@@ -210,14 +209,6 @@ router.post('/requests/:requestId/respond', async (req, res) => {
       where: { id: requestId },
       data: {
         status: 'ACCEPTED',
-      },
-    });
-
-    await tx.message.create({
-      data: {
-        conversationId,
-        senderId: request.requesterId,
-        content: intro,
       },
     });
 
@@ -310,6 +301,7 @@ router.get('/threads', async (req, res) => {
               username: true,
               displayName: true,
               avatarUrl: true,
+              publicKeyJwk: true,
             },
           },
         },
@@ -331,6 +323,104 @@ router.get('/threads', async (req, res) => {
   }));
 
   return res.json({ threads: mapped });
+});
+
+router.get('/threads/:threadId/key', async (req, res) => {
+  const { threadId } = req.params;
+
+  const isParticipant = await ensureParticipant(threadId, req.user.userId);
+  if (!isParticipant) {
+    return res.status(403).json({ error: 'Acesso negado a esta conversa.' });
+  }
+
+  const key = await prisma.conversationKey.findUnique({
+    where: {
+      conversationId_userId: {
+        conversationId: threadId,
+        userId: req.user.userId,
+      },
+    },
+    select: {
+      wrappedKey: true,
+      algorithm: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return res.json({ key });
+});
+
+router.put('/threads/:threadId/key', async (req, res) => {
+  const { threadId } = req.params;
+  const { keys } = req.body || {};
+
+  const isParticipant = await ensureParticipant(threadId, req.user.userId);
+  if (!isParticipant) {
+    return res.status(403).json({ error: 'Acesso negado a esta conversa.' });
+  }
+
+  if (!Array.isArray(keys) || !keys.length) {
+    return res.status(400).json({ error: 'keys é obrigatório.' });
+  }
+
+  const participants = await prisma.conversationParticipant.findMany({
+    where: { conversationId: threadId },
+    select: { userId: true },
+  });
+  const participantIds = new Set(participants.map((p) => p.userId));
+
+  for (const entry of keys) {
+    if (!entry || typeof entry !== 'object') {
+      return res.status(400).json({ error: 'Entrada de keys inválida.' });
+    }
+    if (!entry.userId || !participantIds.has(entry.userId)) {
+      return res.status(400).json({ error: 'userId inválido em keys.' });
+    }
+    if (!entry.wrappedKey || typeof entry.wrappedKey !== 'string') {
+      return res.status(400).json({ error: 'wrappedKey inválido em keys.' });
+    }
+    if (!entry.algorithm || typeof entry.algorithm !== 'string') {
+      return res.status(400).json({ error: 'algorithm inválido em keys.' });
+    }
+  }
+
+  const now = new Date();
+
+  const created = await prisma.$transaction(async (tx) => {
+    const results = [];
+    for (const entry of keys) {
+      const exists = await tx.conversationKey.findUnique({
+        where: {
+          conversationId_userId: {
+            conversationId: threadId,
+            userId: entry.userId,
+          },
+        },
+        select: { conversationId: true },
+      });
+
+      if (exists) {
+        results.push({ userId: entry.userId, created: false });
+        continue;
+      }
+
+      await tx.conversationKey.create({
+        data: {
+          conversationId: threadId,
+          userId: entry.userId,
+          wrappedKey: entry.wrappedKey,
+          algorithm: entry.algorithm,
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+      results.push({ userId: entry.userId, created: true });
+    }
+    return results;
+  });
+
+  return res.json({ status: 'ok', results: created });
 });
 
 router.get('/threads/:threadId/messages', async (req, res) => {
@@ -374,7 +464,26 @@ router.post('/threads/:threadId/messages', async (req, res) => {
     return res.status(403).json({ error: 'Acesso negado a esta conversa.' });
   }
 
-  const cleanContent = String(content).trim().slice(0, 2000);
+  const cleanContent = String(content).trim().slice(0, 10000);
+
+  let parsed = null;
+  try {
+    parsed = JSON.parse(cleanContent);
+  } catch {
+    parsed = null;
+  }
+
+  const isE2eeEnvelope = Boolean(
+    parsed
+    && parsed.v === 1
+    && parsed.t === 'midori.e2ee.message'
+    && typeof parsed.iv === 'string'
+    && typeof parsed.ct === 'string'
+  );
+
+  if (!isE2eeEnvelope) {
+    return res.status(400).json({ error: 'Mensagem deve ser criptografada (E2EE).' });
+  }
 
   const [message] = await prisma.$transaction([
     prisma.message.create({

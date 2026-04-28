@@ -30,6 +30,7 @@ router.get('/me', authenticate, async (req, res) => {
       phone: true,
       bio: true,
       avatarUrl: true,
+      publicKeyJwk: true,
       createdAt: true,
       _count: {
         select: {
@@ -43,6 +44,59 @@ router.get('/me', authenticate, async (req, res) => {
   return res.json({ profile });
 });
 
+router.get('/me/keys', authenticate, async (req, res) => {
+  const keys = await prisma.user.findUnique({
+    where: { id: req.user.userId },
+    select: {
+      publicKeyJwk: true,
+      encryptedPrivateKey: true,
+      privateKeySalt: true,
+    },
+  });
+
+  return res.json({ keys });
+});
+
+router.put('/me/keys', authenticate, async (req, res) => {
+  const { publicKeyJwk, encryptedPrivateKey, privateKeySalt } = req.body || {};
+
+  if (!publicKeyJwk || typeof publicKeyJwk !== 'object') {
+    return res.status(400).json({ error: 'publicKeyJwk é obrigatório.' });
+  }
+
+  if (encryptedPrivateKey != null && typeof encryptedPrivateKey !== 'string') {
+    return res.status(400).json({ error: 'encryptedPrivateKey deve ser string.' });
+  }
+
+  if (privateKeySalt != null && typeof privateKeySalt !== 'string') {
+    return res.status(400).json({ error: 'privateKeySalt deve ser string.' });
+  }
+
+  const data = {
+    publicKeyJwk,
+  };
+
+  const body = req.body || {};
+  if (Object.prototype.hasOwnProperty.call(body, 'encryptedPrivateKey')) {
+    data.encryptedPrivateKey = encryptedPrivateKey || null;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, 'privateKeySalt')) {
+    data.privateKeySalt = privateKeySalt || null;
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: req.user.userId },
+    data,
+    select: {
+      publicKeyJwk: true,
+      privateKeySalt: true,
+    },
+  });
+
+  return res.json({ keys: updated });
+});
+
 router.get('/:username', async (req, res) => {
   const username = String(req.params.username || '').toLowerCase();
 
@@ -54,6 +108,7 @@ router.get('/:username', async (req, res) => {
       displayName: true,
       bio: true,
       avatarUrl: true,
+      publicKeyJwk: true,
       createdAt: true,
       _count: {
         select: {

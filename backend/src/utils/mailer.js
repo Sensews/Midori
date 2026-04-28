@@ -47,15 +47,15 @@ function getMailerConfig() {
   const pass = String(process.env.SMTP_PASS || '').trim();
   const from = String(process.env.SMTP_FROM || '').trim();
 
-  if (!host || !port || !user || !pass || !from) {
+  if (!host || !port || !from) {
     return null;
   }
 
   return {
     host,
     port,
-    user,
-    pass,
+    user: user || null,
+    pass: pass || null,
     from,
   };
 }
@@ -63,21 +63,109 @@ function getMailerConfig() {
 function getTransporter() {
   const config = getMailerConfig();
   if (!config) {
-    throw new Error('Serviço de email não configurado. Defina SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS e SMTP_FROM.');
+    throw new Error('Serviço de email não configurado. Defina SMTP_HOST, SMTP_PORT e SMTP_FROM (e opcionalmente SMTP_USER/SMTP_PASS).');
+  }
+
+  const transportOptions = {
+    host: config.host,
+    port: config.port,
+    secure: config.port === 465,
+  };
+
+  if (config.user && config.pass) {
+    transportOptions.auth = {
+      user: config.user,
+      pass: config.pass,
+    };
   }
 
   return {
     config,
     transporter: nodemailer.createTransport({
-      host: config.host,
-      port: config.port,
-      secure: config.port === 465,
-      auth: {
-        user: config.user,
-        pass: config.pass,
-      },
+      ...transportOptions,
     }),
   };
+}
+
+function getContactRecipient() {
+  const explicit = String(process.env.CONTACT_TO || '').trim();
+  if (explicit) return explicit;
+  return '';
+}
+
+async function sendContactEmail({
+  fullName,
+  subject,
+  email,
+  phone,
+  destination,
+  uf,
+  city,
+  message,
+  meta,
+}) {
+  const { config, transporter } = getTransporter();
+
+  const to = getContactRecipient();
+  if (!to) {
+    throw new Error('CONTACT_TO não configurado.');
+  }
+
+  const safeSubject = escapeHtml(subject);
+  const safeName = escapeHtml(fullName);
+  const safeEmail = escapeHtml(email);
+  const safePhone = escapeHtml(phone || '-');
+  const safeDestination = escapeHtml(destination || '-');
+  const safeUf = escapeHtml(uf || '-');
+  const safeCity = escapeHtml(city || '-');
+  const safeMessage = escapeHtml(message);
+  const safeIp = escapeHtml(meta?.ip || '-');
+  const safeUa = escapeHtml(meta?.userAgent || '-');
+
+  const html = renderEmailLayout({
+    preheader: `Nova mensagem de contato: ${subject}`,
+    title: 'Fale conosco',
+    subtitle: 'Nova mensagem enviada pelo formulário do Midori.',
+    mascotName: 'Mido Curioso.svg',
+    bodyHtml: `
+      <div style="display:grid;gap:10px;">
+        <p style="margin:0;font-size:15px;line-height:1.6;color:#2D2D2D;"><strong>Assunto:</strong> ${safeSubject}</p>
+        <p style="margin:0;font-size:15px;line-height:1.6;color:#2D2D2D;"><strong>Nome:</strong> ${safeName}</p>
+        <p style="margin:0;font-size:15px;line-height:1.6;color:#2D2D2D;"><strong>E-mail:</strong> ${safeEmail}</p>
+        <p style="margin:0;font-size:15px;line-height:1.6;color:#2D2D2D;"><strong>Telefone:</strong> ${safePhone}</p>
+        <p style="margin:0;font-size:15px;line-height:1.6;color:#2D2D2D;"><strong>Destino:</strong> ${safeDestination}</p>
+        <p style="margin:0;font-size:15px;line-height:1.6;color:#2D2D2D;"><strong>UF/Cidade:</strong> ${safeUf} / ${safeCity}</p>
+        <div style="margin-top:6px;padding:12px 14px;border-radius:12px;border:1px solid #E0E0E0;background:#FFFFFF;">
+          <p style="margin:0;font-size:15px;line-height:1.6;color:#2D2D2D;white-space:pre-wrap;">${safeMessage}</p>
+        </div>
+      </div>
+    `,
+    footerHtml: `
+      <div style="display:grid;gap:6px;">
+        <div><strong>IP:</strong> ${safeIp}</div>
+        <div><strong>User-Agent:</strong> ${safeUa}</div>
+      </div>
+    `,
+  });
+
+  await transporter.sendMail({
+    from: config.from,
+    to,
+    replyTo: email,
+    subject: `Midori | Contato - ${subject}`,
+    text:
+      `Midori | Contato\n\n`
+      + `Assunto: ${subject}\n`
+      + `Nome: ${fullName}\n`
+      + `E-mail: ${email}\n`
+      + `Telefone: ${phone || '-'}\n`
+      + `Destino: ${destination || '-'}\n`
+      + `UF/Cidade: ${uf || '-'} / ${city || '-'}\n\n`
+      + `${message}\n\n`
+      + `IP: ${meta?.ip || '-'}\n`
+      + `User-Agent: ${meta?.userAgent || '-'}\n`,
+    html,
+  });
 }
 
 function renderEmailLayout({ preheader, title, subtitle, bodyHtml, footerHtml, mascotName = 'Mido.svg' }) {
@@ -246,4 +334,5 @@ module.exports = {
   sendSecurityCodeEmail,
   sendPasswordResetLinkEmail,
   sendSecurityNoticeEmail,
+  sendContactEmail,
 };

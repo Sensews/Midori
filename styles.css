@@ -263,12 +263,43 @@ a {
     transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    border: 0.1vw solid var(--input-border);
+    border-radius: 0.83vw;
+    padding: 0.9vw 1.25vw;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.9vw;
+    color: var(--text-dark);
+    background: var(--white);
+    outline: none;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.form-group select {
+    height: 3.5vw;
+    padding: 0 1.1vw;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 8.5vw;
+    line-height: 1.35;
+}
+
 .form-group input::placeholder {
     color: #B0B0B0;
     font-weight: 400;
 }
 
 .form-group input:focus {
+    border-color: var(--green-light);
+    box-shadow: 0 0 0 0.2vw rgba(181, 255, 63, 0.25);
+}
+
+.form-group select:focus,
+.form-group textarea:focus {
     border-color: var(--green-light);
     box-shadow: 0 0 0 0.2vw rgba(181, 255, 63, 0.25);
 }
@@ -283,6 +314,48 @@ a {
     font-size: 0.75vw;
     color: var(--error);
     margin-top: 0.2vw;
+}
+
+.contact-fab {
+    position: fixed;
+    right: 1.8vw;
+    bottom: 1.8vw;
+    z-index: 160;
+    height: 3.2vw;
+    padding: 0 1.2vw;
+    border-radius: 0.9vw;
+    border: 0.08vw solid rgba(255, 255, 255, 0.35);
+    background: var(--green-dark);
+    color: var(--white);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.95vw;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.contact-privacy {
+    display: flex;
+    gap: 0.6vw;
+    align-items: flex-start;
+    font-size: 0.78vw;
+    line-height: 1.35;
+    color: var(--text-dark);
+    margin-top: 0.2vw;
+}
+
+.contact-privacy input {
+    margin-top: 0.2vw;
+}
+
+.contact-status {
+    font-size: 0.82vw;
+    color: var(--text-muted);
+    margin: 0.7vw 0 0 0;
+    min-height: 1.2em;
+}
+
+.contact-modal__card {
+    width: min(92vw, 44vw);
 }
 
 .password-strength {

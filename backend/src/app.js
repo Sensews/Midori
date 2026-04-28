@@ -14,6 +14,7 @@ const postRoutes = require('./routes/posts.routes');
 const messageRoutes = require('./routes/messages.routes');
 const reportRoutes = require('./routes/reports.routes');
 const adminRoutes = require('./routes/admin.routes');
+const contactRoutes = require('./routes/contact.routes');
 
 const app = express();
 
@@ -73,6 +74,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/contact', contactRoutes);
 
 app.use('/api', (_req, res) => {
   return res.status(404).json({ error: 'Rota não encontrada.' });

@@ -261,6 +261,44 @@
         });
     }
 
+    async function getMyE2eeKeys() {
+        return request('/profile/me/keys');
+    }
+
+    async function putMyE2eeKeys({ publicKeyJwk, encryptedPrivateKey, privateKeySalt } = {}) {
+        return request('/profile/me/keys', {
+            method: 'PUT',
+            body: JSON.stringify({ publicKeyJwk, encryptedPrivateKey, privateKeySalt }),
+        });
+    }
+
+    async function sendContactMessage({
+        fullName,
+        subject,
+        email,
+        phone,
+        destination,
+        uf,
+        city,
+        message,
+        acceptPrivacy,
+    } = {}) {
+        return request('/contact', {
+            method: 'POST',
+            body: JSON.stringify({
+                fullName,
+                subject,
+                email,
+                phone,
+                destination,
+                uf,
+                city,
+                message,
+                acceptPrivacy,
+            }),
+        });
+    }
+
     async function listPosts(params = {}) {
         const search = new URLSearchParams();
         if (params.type) search.set('type', params.type);
@@ -340,6 +378,17 @@
         return request(`/messages/threads/${encodeURIComponent(threadId)}/messages`, {
             method: 'POST',
             body: JSON.stringify({ content }),
+        });
+    }
+
+    async function getThreadKey(threadId) {
+        return request(`/messages/threads/${encodeURIComponent(threadId)}/key`);
+    }
+
+    async function putThreadKey(threadId, { keys } = {}) {
+        return request(`/messages/threads/${encodeURIComponent(threadId)}/key`, {
+            method: 'PUT',
+            body: JSON.stringify({ keys }),
         });
     }
 
@@ -444,6 +493,9 @@
         getPublicProfile,
         updateMyProfile,
         uploadMyAvatar,
+        getMyE2eeKeys,
+        putMyE2eeKeys,
+        sendContactMessage,
         listPosts,
         getPost,
         createPost,
@@ -455,6 +507,8 @@
         listThreads,
         getThreadMessages,
         sendThreadMessage,
+        getThreadKey,
+        putThreadKey,
         createMessageRequest,
         listIncomingRequests,
         respondMessageRequest,
