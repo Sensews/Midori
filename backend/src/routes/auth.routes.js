@@ -401,7 +401,7 @@ async function evaluateLoginRisk(user, context) {
   const seenIp = sessions.some((session) => session.ipHash && session.ipHash === context.ipHash);
 
   const risks = {
-    alwaysRequired: true,
+    mfaDisabled: true,
     newDevice: !seenDevice,
     newIp: !seenIp,
     suspiciousHour: isSuspiciousHour(context.hour),
@@ -409,9 +409,8 @@ async function evaluateLoginRisk(user, context) {
     privilegedRole: user.role === 'SUPERADMIN',
   };
 
-  const requiresStepUp = risks.alwaysRequired || risks.privilegedRole || risks.newDevice || risks.newIp || risks.suspiciousHour || risks.manyAttempts;
-  const high = risks.privilegedRole || (risks.newDevice && risks.newIp) || risks.manyAttempts;
-  const riskLevel = high ? 'high' : (requiresStepUp ? 'medium' : 'low');
+  const requiresStepUp = false;
+  const riskLevel = 'low';
 
   return { requiresStepUp, riskLevel, risks };
 }
@@ -740,7 +739,8 @@ router.post('/login', async (req, res) => {
       code,
       expiresInMinutes: LOGIN_CODE_TTL_MINUTES,
     });
-  } catch {
+  } catch (error) {
+    console.error('Falha ao enviar codigo MFA por email:', error);
     return res.status(503).json({
       error:
         'Serviço de email indisponível no momento. Tente novamente em instantes ou contate o suporte.',
