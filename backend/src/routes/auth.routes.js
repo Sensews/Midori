@@ -401,6 +401,7 @@ async function evaluateLoginRisk(user, context) {
   const seenIp = sessions.some((session) => session.ipHash && session.ipHash === context.ipHash);
 
   const risks = {
+    alwaysRequired: true,
     newDevice: !seenDevice,
     newIp: !seenIp,
     suspiciousHour: isSuspiciousHour(context.hour),
@@ -408,7 +409,7 @@ async function evaluateLoginRisk(user, context) {
     privilegedRole: user.role === 'SUPERADMIN',
   };
 
-  const requiresStepUp = risks.privilegedRole || risks.newDevice || risks.newIp || risks.suspiciousHour || risks.manyAttempts;
+  const requiresStepUp = risks.alwaysRequired || risks.privilegedRole || risks.newDevice || risks.newIp || risks.suspiciousHour || risks.manyAttempts;
   const high = risks.privilegedRole || (risks.newDevice && risks.newIp) || risks.manyAttempts;
   const riskLevel = high ? 'high' : (requiresStepUp ? 'medium' : 'low');
 
