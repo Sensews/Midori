@@ -41,10 +41,17 @@ function getEmailBrandAssets() {
 }
 
 function getMailerConfig() {
+  const optionalValue = (value) => {
+    const clean = String(value || '').trim();
+    if (!clean) return '';
+    if (['n/a', 'na', 'none', 'null', '-'].includes(clean.toLowerCase())) return '';
+    return clean;
+  };
+
   const host = String(process.env.SMTP_HOST || '').trim();
   const port = Number(process.env.SMTP_PORT || 0);
-  const user = String(process.env.SMTP_USER || '').trim();
-  const pass = String(process.env.SMTP_PASS || '').trim();
+  const user = optionalValue(process.env.SMTP_USER);
+  const pass = optionalValue(process.env.SMTP_PASS);
   const from = String(process.env.SMTP_FROM || '').trim();
 
   if (!host || !port || !from) {
