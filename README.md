@@ -16,6 +16,7 @@ Este README foi escrito para onboarding do grupo e configuração local, sem exp
 - Backend em [backend](backend).
 - Modelo de dados Prisma em [backend/prisma/schema.prisma](backend/prisma/schema.prisma).
 - Script SQL base para MySQL em [backend/prisma/mysql-init.sql](backend/prisma/mysql-init.sql).
+- Deploy do frontend no laboratorio: [docs/deploy-frontend-34.md](docs/deploy-frontend-34.md).
 
 ## Pré-requisitos
 
@@ -111,4 +112,3 @@ DATABASE_URL="mysql://USER:PASSWORD@localhost:3306/midori?connection_limit=10"
 
 - Este documento evita descrever rotas internas, payloads e regras detalhadas para reduzir exposição desnecessária.
 - Para desenvolvimento interno do grupo, alinhem detalhes técnicos em canais privados (reunião, documento interno privado ou pair programming).
-
