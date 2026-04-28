@@ -69,6 +69,7 @@
     const state = {
         loginChallengeToken: '',
         resetEmail: '',
+        loginPassword: '',
     };
 
     const MFA_SESSION_KEY = 'midori.auth.mfa.challenge';
@@ -356,6 +357,7 @@
 
         const loginValue = sanitize(emailInput.value).trim();
         const password = passwordInput.value;
+        state.loginPassword = password;
 
         const emailErr = validateEmail(loginValue);
         const passwordErr = validatePassword(password);
@@ -378,6 +380,13 @@
             const response = await api.startLogin(loginValue, password);
             if (response?.requiresMfa === false && response?.user) {
                 api.setSession(null, response.user);
+                if (window.MidoriE2EE && typeof window.MidoriE2EE.ensureUserKeys === 'function') {
+                    try {
+                        await window.MidoriE2EE.ensureUserKeys({ api, password });
+                    } catch {
+                    }
+                }
+                state.loginPassword = '';
                 window.location.href = 'home.html';
                 return;
             }
@@ -388,6 +397,7 @@
             openMfaModal(response.challengeToken);
         } catch (error) {
             recordFailedAttempt();
+            state.loginPassword = '';
             showError(emailInput, emailError, error.message || 'Email ou senha incorretos.');
         } finally {
             setLoading(false);
@@ -521,6 +531,13 @@
         try {
             await api.verifyLoginCode(state.loginChallengeToken, cleanCode);
             clearMfaChallenge();
+            if (window.MidoriE2EE && typeof window.MidoriE2EE.ensureUserKeys === 'function') {
+                try {
+                    await window.MidoriE2EE.ensureUserKeys({ api, password: state.loginPassword });
+                } catch {
+                }
+            }
+            state.loginPassword = '';
             window.location.href = 'home.html';
         } catch (error) {
             mfaCodeError.textContent = error.message || 'Código inválido ou expirado.';
@@ -643,6 +660,13 @@
                 cpf: regCpfInput.value.trim(),
                 password: regPasswordInput.value,
             });
+
+            if (window.MidoriE2EE && typeof window.MidoriE2EE.ensureUserKeys === 'function') {
+                try {
+                    await window.MidoriE2EE.ensureUserKeys({ api, password: regPasswordInput.value });
+                } catch {
+                }
+            }
 
             window.location.href = 'home.html';
         } catch (error) {

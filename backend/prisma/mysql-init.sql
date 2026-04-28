@@ -7,6 +7,9 @@ CREATE TABLE `User` (
     `phone` VARCHAR(191) NULL,
     `displayName` VARCHAR(191) NOT NULL,
     `passwordHash` VARCHAR(191) NOT NULL,
+    `publicKeyJwk` JSON NULL,
+    `encryptedPrivateKey` TEXT NULL,
+    `privateKeySalt` VARCHAR(191) NULL,
     `refreshTokenHash` VARCHAR(191) NULL,
     `refreshTokenExpiresAt` DATETIME(3) NULL,
     `failedLoginAttempts` INTEGER NOT NULL DEFAULT 0,
@@ -201,12 +204,25 @@ CREATE TABLE `Message` (
     `id` VARCHAR(191) NOT NULL,
     `conversationId` VARCHAR(191) NOT NULL,
     `senderId` VARCHAR(191) NOT NULL,
-    `content` VARCHAR(191) NOT NULL,
+    `content` TEXT NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     INDEX `Message_conversationId_createdAt_idx`(`conversationId`, `createdAt`),
     INDEX `Message_senderId_idx`(`senderId`),
     PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `ConversationKey` (
+    `conversationId` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `wrappedKey` TEXT NOT NULL,
+    `algorithm` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    INDEX `ConversationKey_userId_idx`(`userId`),
+    PRIMARY KEY (`conversationId`, `userId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -258,6 +274,12 @@ ALTER TABLE `MessageRequest` ADD CONSTRAINT `MessageRequest_recipientId_fkey` FO
 
 -- AddForeignKey
 ALTER TABLE `MessageRequest` ADD CONSTRAINT `MessageRequest_postId_fkey` FOREIGN KEY (`postId`) REFERENCES `Post`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `ConversationKey` ADD CONSTRAINT `ConversationKey_conversationId_fkey` FOREIGN KEY (`conversationId`) REFERENCES `Conversation`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `ConversationKey` ADD CONSTRAINT `ConversationKey_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Like` ADD CONSTRAINT `Like_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
